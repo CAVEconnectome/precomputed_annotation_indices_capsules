@@ -1,9 +1,11 @@
 {
 	"version": 1,
+	"named_parameters": true,
 	"parameters": [
 		{
 			"id": "eQcRRI2WMYKlsgla",
 			"name": "capsule",
+			"param_name": "capsule",
 			"description": "capsule",
 			"type": "text",
 			"value_type": "string"
@@ -11,6 +13,7 @@
 		{
 			"id": "yBu130dHPz9ls8xz",
 			"name": "data_source_name",
+			"param_name": "data_source_name",
 			"description": "data_source_name",
 			"type": "text",
 			"value_type": "string"
