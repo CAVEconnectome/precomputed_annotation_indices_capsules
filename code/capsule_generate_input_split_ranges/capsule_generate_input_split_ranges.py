@@ -32,8 +32,8 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    data_loc = f"../../data/{args.capsule}/"
-    results_loc = "../../results/"
+    data_loc = f"../data/"
+    results_loc = "../results/"
 
     config = read_config()
     logging.basicConfig(stream=sys.stdout, level=get_logging_level_from_desc(config['LOGGING_LEVEL']), format=config['LOGGING_FORMAT'], force=True)
