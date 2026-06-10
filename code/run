@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -ex
+
+# This is the master script for the capsule. When you click "Reproducible Run", the code in this file will execute.
+
+capsule="${1#--capsule=}"
+
+echo "Running capsule: '$capsule'"
+
+python -u -m ${capsule}.${capsule} "$@"
