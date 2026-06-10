@@ -91,8 +91,8 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    data_loc = f"../../data/{args.capsule}/"
-    results_loc = "../../results/"
+    data_loc = f"../data/"
+    results_loc = "../results/"
 
     logging.info(f"{data_loc} contents:")
     logging.info('  ' + '\n  '.join(sorted(os.listdir(data_loc))).strip() + '\n')
