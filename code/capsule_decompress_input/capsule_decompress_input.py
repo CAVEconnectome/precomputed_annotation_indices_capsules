@@ -8,7 +8,7 @@ import zipfile
 import gzip
 import tarfile
 
-from util import *
+from shared.util import *
 
 if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.CRITICAL, format='%(message)s')

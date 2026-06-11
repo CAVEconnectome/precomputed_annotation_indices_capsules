@@ -9,7 +9,7 @@ import pyarrow.parquet as pq
 import pyarrow as pa
 import shutil
 
-from util import *
+from shared.util import *
 
 def split_csv_file(input_file_path, num_splits, split_id, row_start, row_end):
     logging.info("Splitting CSV file\n\n")
