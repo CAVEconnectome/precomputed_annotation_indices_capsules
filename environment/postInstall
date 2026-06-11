@@ -2,3 +2,5 @@
 set -e
 
 pip install psutil
+pip install pandas
+pip install caveclient
