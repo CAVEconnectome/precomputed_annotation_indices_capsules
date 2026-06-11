@@ -95,6 +95,42 @@ def parse_args(extra_args=[]):
 
     return args
 
+# def determine_capsule_type_from_upstream_capsule_labels():
+#     """
+#     There are two ways to determine which capsule this run should perform.
+    
+#     (1) One way is to receive a command-line argument (in Code Ocean, this is an App Builder parameter) that specifies this capsule's "identity".
+    
+#     (2) The other way is to investigate the input data path for "labeling" files that indicate the set of upstream capsules that fed into this one. The topology of the pipeline will then uniquely determine this capsule's intended identity within the topology.
+    
+#     The advantage of the second way, despite its more abstruse approach, is it is automated and self-discoverable, reducing the burden on the user or caller to explicitly provide the intended capsule identity. As such, the Code Ocean App Builder interface can be simplified by completely removing the parameter that is otherwise used to indicate the capsule identity.
+
+#     We can also use both approaches at the same time, so long as some protocol of priority or overriding is determined in cases of disagreement.
+#     """
+#     data_loc = "../data/"
+
+#     capsule_label_files = sorted(list(glob.glob(f"{data_loc}capsule-label_*.txt")))
+#     logging.info(f"Capsule label files:\n  {'\n  '.join(capsule_label_files)}")
+
+#     # The file list will contain one file per capsule instance, not per capsule type. Reduce that list to a unique set of capsule types. We don't care now many instances of each capsule were run.
+#     capsule_labels_wo_instance_redundancy = set()
+#     for capsule_label_file in capsule_label_files:
+#         capsule_label_filename = os.path.basename(capsule_label_file)
+#         header, capsule_label, instance = capsule_label_filename.split('_')
+#         assert header = "capsule-label"
+#         capsule_labels_wo_instance_redundancy.add(capsule_label)
+#     capsule_labels_wo_instance_redundancy = sorted(list(capsule_labels_wo_instance_redundancy))
+#     logging.info(f"Unique capsule label files:\n  {'\n  '.join(capsule_labels_wo_instance_redundancy)}")
+
+#     if capsule_labels_wo_instance_redundancy == []:
+#         return "capsule_generate_config"
+#     elif capsule_labels_wo_instance_redundancy == []:
+#         return "capsule_generate_input_split_ranges"
+#     elif capsule_labels_wo_instance_redundancy == []:
+#         return "capsule_decompress_input"
+#     elif capsule_labels_wo_instance_redundancy == []:
+#         return "capsule_generate_input_split"
+
 def read_config(sub_configs=[]):
     data_loc = "../data/"
     
