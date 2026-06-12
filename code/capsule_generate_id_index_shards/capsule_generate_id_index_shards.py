@@ -11,7 +11,8 @@ import json
 import random
 import shutil
 import tarfile
-import utilities
+
+import shared.utilities as utilities
 
 from shared.util import *
 from shared.ram_data_pond import *
