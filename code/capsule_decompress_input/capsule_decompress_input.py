@@ -80,6 +80,8 @@ if __name__ == "__main__":
                 elif os.path.isdir(input_subpath):
                     logging.info(f"Copying input directory to results: {input_subpath}")
                     shutil.copytree(input_subpath, f"{results_loc}{os.path.basename(input_subpath)}")
+                else:
+                    raise TypeError(f"Unknown file type (not a file or a directory): {input_subpath}")
         else:
             raise RuntimeError("No uncompressed input files found indicated by config.")
     
