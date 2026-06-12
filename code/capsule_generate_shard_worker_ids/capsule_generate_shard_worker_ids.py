@@ -7,7 +7,7 @@ import random
 
 from shared.util import *
 
-import shared.sharding
+import shared.sharding as sharding
 
 if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.CRITICAL, format='%(message)s')

@@ -18,7 +18,7 @@ from shared.ram_data_pond import *
 from shared.google_storage import *
 from shared.aws_storage import *
 
-import shared.simple_writer_no_spatial_indexing
+import shared.simple_writer_no_spatial_indexing as simple_writer_no_spatial_indexing
 import shared.annotations as anno
 
 def extract_archives():
