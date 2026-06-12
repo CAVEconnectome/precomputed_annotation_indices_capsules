@@ -14,12 +14,12 @@ import tarfile
 import utilities
 
 from shared.util import *
-from ram_data_pond import *
-from google_storage import *
-from aws_storage import *
+from shared.ram_data_pond import *
+from shared.google_storage import *
+from shared.aws_storage import *
 
-import simple_writer_no_spatial_indexing
-import annotations as anno
+import shared.simple_writer_no_spatial_indexing
+import shared.annotations as anno
 
 def extract_archives():
     logging.info("Extracting archives")

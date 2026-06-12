@@ -13,12 +13,12 @@ import shutil
 import tarfile
 
 from shared.util import *
-from ram_data_pond import *
-from google_storage import *
-from aws_storage import *
+from shared.ram_data_pond import *
+from shared.google_storage import *
+from shared.aws_storage import *
 
-import simple_writer_no_spatial_indexing
-import annotations as anno
+import shared.simple_writer_no_spatial_indexing
+import shared.annotations as anno
 
 def get_shard_hex(shard_number: int, shard_bits: int, force_str: bool) -> str:
     """Convert shard number to zero-padded lowercase hex string.

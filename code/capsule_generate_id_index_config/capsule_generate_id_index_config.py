@@ -5,7 +5,7 @@ import json
 import pprint
 
 from shared.util import *
-from sharding_spec_calculations import *
+from shared.sharding_spec_calculations import *
 
 id_config = {
     # "LOGGING_LEVEL": "info",
