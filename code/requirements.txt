@@ -2,4 +2,5 @@ psutil>=5.9.0
 pandas>=2.2.0
 mmh3
 google-auth
+google-cloud-storage
 caveclient
