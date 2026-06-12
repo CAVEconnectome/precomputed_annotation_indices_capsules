@@ -3,4 +3,7 @@ set -e
 
 pip install psutil
 pip install pandas
+pip install mmh3
+pip install pyarrow
+pip install fastparquet
 pip install caveclient
