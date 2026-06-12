@@ -2,6 +2,7 @@ import logging
 import os
 import glob
 from timeit import default_timer
+from collections import defaultdict
 import fnmatch
 import re
 import shutil
@@ -111,6 +112,17 @@ class RAMDataPond:
             if isinstance(self.ram_data_pond[filepath], str):
                 return self.ram_data_pond[filepath].strip()
             return self.ram_data_pond[filepath]
+    
+    @staticmethod
+    def read_nlines_from_disk(filepath, nlines):
+        with open(filepath, 'r') as f:
+            lines = []
+            while len(lines) < nlines:
+                line = f.readline()
+                if not line:
+                    break
+                lines.append(line)
+            return lines
 
     def read_nlines_from_disk_or_ram_data_pond(self, filepath, nlines, force_disk=False):
         """
@@ -118,14 +130,7 @@ class RAMDataPond:
         """
         if self.ram_data_pond is None or force_disk:
             if filepath.endswith(".csv"):
-                with open(filepath, 'r') as f:
-                    lines = []
-                    while len(lines) < nlines:
-                        line = f.readline()
-                        if not line:
-                            break
-                        lines.append(line)
-                    return lines
+                return RAMDataPond.read_nlines_from_disk(filepath, nlines)
             elif filepath.endswith(".parquet"):
                 # TODO: Read the Parquet file more efficiently, only reading the necessary number of lines. See the Input Split generation capsule for relative code.
                 df = pd.read_parquet(filepath)
@@ -385,9 +390,47 @@ class RAMDataPond:
     #         archive += archive_str_data(filepath, self.ram_data_pond[filepath], file_out)
         
     #     return archive
-    
+
     @staticmethod
     def dearchive_file(data_loc, archive_filepath, keep_filters=[""]):
+        """
+            As files are read from the archive, only keep those whose filename includes any strings
+            in the keep_filters list. All other dearchived files are discarded.
+            """
+        with open(archive_filepath) as f:
+            while True:
+                filepath = ""
+                while len(filepath) < 1000:
+                    c = f.read(1)
+                    if c == '\n' or c == '':
+                        break
+                    filepath += c
+                if filepath:
+                    if len(filepath) >= 1000:
+                        raise ValueError(f"Invalid filepath: {filepath}")
+                    # logging.info(f"\nNext archive filepath: {filepath}")
+                    # file_len_str_len_str = f.readline()
+                    # file_len_str_len = int(file_len_str_len_str)
+                    file_len_str = f.readline()
+                    file_len = int(file_len_str)
+                    file_contents = f.read(file_len)
+                    assert f.read(1) == '\n'
+                    filename = os.path.basename(filepath)
+                    for keep_filter in keep_filters:
+                        if keep_filter in filename:
+                            logging.info(f"In filter ({file_len} B): {filename}")
+                            filedirpath = '/'.join(filepath.split('/')[:-1])
+                            # logging.info(f"Next archive filedirpath: {filedirpath}")
+                            # logging.info(f"Next archive filename: {filename}")
+                            os.makedirs(f"{data_loc}{filedirpath}", exist_ok=True)
+                            with open(f"{data_loc}{filepath}", 'w') as fout:
+                                fout.write(file_contents)
+                            break
+                else:
+                    break
+    
+    @staticmethod
+    def dearchive_file_verbose(data_loc, archive_filepath, keep_filters=[""]):
         """
         As files are read from the archive, only keep those whose filename includes any strings
         in the keep_filters list. All other dearchived files are discarded.
@@ -436,6 +479,80 @@ class RAMDataPond:
         logging.info(f"RAMDataPond.dearchive_file() elapsed time: {default_timer() - st:.3f}s")
         
         return num_in_filter, total_subarchives_len
+    
+    @staticmethod
+    def dearchive_file__group_by_treelevel_and_shard(archive_i, data_loc, archive_filepath, keep_filters=[""]):
+        """
+        As files are read from the archive, only keep those whose filename includes any strings
+        in the keep_filters list. All other dearchived files are discarded.
+        """
+        logging.info(f"\nDearchiving {archive_filepath}\n  with keep_filters: {keep_filters}")
+        st = default_timer()
+        num_in_filter = 0
+        total_subarchives_len = 0
+        treelevelcellids = set()  # debug
+        with open(archive_filepath) as f:
+            subarchive_groups = defaultdict(str)
+            subarchive_idx = -1
+            while True:
+                subarchive_idx += 1
+                filepath = ""
+                while len(filepath) < 1000:
+                    c = f.read(1)
+                    if c == '\n' or c == '':
+                        break
+                    filepath += c
+                if filepath:
+                    if len(filepath) >= 1000:
+                        raise ValueError(f"Invalid filepath: {filepath}")
+                    # logging.info(f"\nNext archive filepath: {filepath}")
+                    # file_len_str_len_str = f.readline()
+                    # file_len_str_len = int(file_len_str_len_str)
+                    file_len_str = f.readline()
+                    file_len = int(file_len_str)
+                    file_contents = f.read(file_len)
+                    assert f.read(1) == '\n'
+                    filename = os.path.basename(filepath)
+                    for keep_filter in keep_filters:
+                        if keep_filter in filename:
+                            num_in_filter += 1
+                            total_subarchives_len += file_len
+                            if archive_i < 5 and subarchive_idx < 5:
+                                logging.info(f"In filter (first 5 shown) ({file_len:>10,} B): {filename}")
+                            pcs = filename.split('__')
+                            
+                            treelevelcellid = pcs[3].split('-')[1].replace(',', '_')
+                            treelevelcellids.add(treelevelcellid)
+
+                            group_filename = f"{pcs[0]}__{pcs[1]}__{pcs[2]}__{pcs[4]}"
+                            if archive_i < 5 and subarchive_idx < 5:
+                                logging.info(f"Subarchive group key: {group_filename}")
+                            
+                            file_content_lines_ends_with_endline = file_contents == '\n'
+                            file_content_lines = file_contents.split('\n')
+                            for i, file_content_line in enumerate(file_content_lines):
+                                file_content_lines[i] = file_content_line + f",{treelevelcellid}"
+                            file_contents = '\n'.join(file_content_lines)
+                            if True:  # file_content_lines_ends_with_endline:
+                                file_contents += '\n'
+                            
+                            subarchive_groups[group_filename] += file_contents
+                else:
+                    break
+            logging.info(f"Total subarchive count, num subarchives in filter: {subarchive_idx} {num_in_filter}")
+            for sag_i, (group_filename, file_contents) in enumerate(subarchive_groups.items()):
+                filedirpath = group_filename[:group_filename.rindex('.')]
+                os.makedirs(f"{data_loc}{filedirpath}", exist_ok=True)
+                if archive_i < 5 and sag_i < 5:
+                    logging.info(f"Writing subarchive group file {sag_i+1} of {len(subarchive_groups)} (only first 5 shown) of len {len(file_contents):>10,} B: {data_loc}{group_filename}")
+                with open(f"{data_loc}{group_filename}", 'w') as fout:
+                    fout.write(file_contents)
+        
+        # logging.info(f"treelevelcellids: {treelevelcellids}")
+        
+        logging.info(f"RAMDataPond.dearchive_file() elapsed time: {default_timer() - st:.3f}s")
+        
+        return num_in_filter, len(subarchive_groups), total_subarchives_len
     
     @staticmethod
     def dearchive_file_and_return_sectioned(archive_filepath):
