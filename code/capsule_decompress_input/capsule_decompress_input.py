@@ -75,11 +75,15 @@ if __name__ == "__main__":
             logging.info(f"Found top-level input subpaths: {input_subpaths}")
             for input_subpath in input_subpaths:
                 if os.path.isfile(input_subpath):
+                    logging.info(f"Copying input file to results: {input_subpath}")
                     shutil.copy(input_subpath, f"{results_loc}{os.path.basename(input_subpath)}")
                 elif os.path.isdir(input_subpath):
+                    logging.info(f"Copying input directory to results: {input_subpath}")
                     shutil.copytree(input_subpath, f"{results_loc}{os.path.basename(input_subpath)}")
         else:
             raise RuntimeError("No uncompressed input files found indicated by config.")
+    
+    finalize_results(results_loc)
 
 logging.info("\nDone")
 process_running_time()
