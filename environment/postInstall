@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
+pip install sortedcontainers
 pip install psutil
 pip install pandas
 pip install mmh3
 pip install pyarrow
 pip install fastparquet
 pip install caveclient
+pip install cloud-files
