@@ -4,3 +4,4 @@ mmh3
 google-auth
 google-cloud-storage
 caveclient
+cloud-files
