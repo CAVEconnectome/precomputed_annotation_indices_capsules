@@ -4,7 +4,7 @@ import struct
 import io
 from collections import defaultdict
 
-import annotations as anno
+import shared.annotations as anno
 
 class ShardFileReader:
     def __init__(self,

@@ -1,8 +1,8 @@
 import numpy as np
 import random
 
-from ram_data_pond import *
-from ram_file_tree import *
+from shared.ram_data_pond import *
+from shared.ram_file_tree import *
 
 class RawTable():
     """

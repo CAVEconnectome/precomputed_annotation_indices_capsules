@@ -2,7 +2,7 @@ import logging
 from timeit import default_timer
 from collections import Counter
 
-from util import *
+from shared.util import *
 
 profiling_enabled = True
 

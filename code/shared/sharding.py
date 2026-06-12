@@ -18,8 +18,8 @@ from dataclasses import dataclass
 from math import ceil
 from typing import BinaryIO, Dict, List
 
-import annotations
-import utilities
+import shared.annotations
+import shared.utilities
 
 logger = logging.getLogger(__name__)
 

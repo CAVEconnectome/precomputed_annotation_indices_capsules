@@ -22,7 +22,7 @@ from typing import IO, Any, ClassVar, Literal, Sequence
 import numpy as np
 import mmh3
 
-import geometry
+import shared.geometry
 
 logger = logging.getLogger(__name__)
 
