@@ -3,9 +3,9 @@ import pandas as pd
 
 config = {}
 
-import annotations as anno
-import sharding
-import utilities
+import shared.annotations as anno
+import shared.sharding as sharding
+import shared.utilities as utilities
 
 def get_test_shard_number(chunk_id: int, hash, preshift_bits, shard_bits, minishard_bits):
     """

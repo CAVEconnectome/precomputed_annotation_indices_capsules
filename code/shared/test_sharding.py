@@ -1,6 +1,6 @@
-from sharding_spec_calculations import *
+from shared.sharding_spec_calculations import *
 
-import annotations as anno
+import shared.annotations as anno
 
 def test_sharding():
     sharding_spec = generate_sharding_spec(
