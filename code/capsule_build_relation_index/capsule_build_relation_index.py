@@ -20,7 +20,7 @@ from shared.ram_data_pond import *
 from shared.google_storage import *
 from shared.aws_storage import *
 
-import annotations as anno
+import shared.annotations as anno
 
 def convert_relation_key(relationship):
     # The following conversions are copied from Joe Strout's code
