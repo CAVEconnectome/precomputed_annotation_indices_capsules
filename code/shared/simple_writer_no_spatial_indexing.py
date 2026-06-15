@@ -349,7 +349,7 @@ class SimpleWriter:
                 chunks.append(sharding.Chunk(related_id, data))
                 # print(f"Related id {related_id} compiles to {len(data)} bytes")
             st = default_timer()
-            file_buffer_bytes, writer_profile = sharding.writef_shard_files(relation.sharding, chunks, shard_number)
+            file_buffer_bytes, writer_profile = sharding.writef_shard_files_wo_ioobj(relation.sharding, shard_number, chunks)
             shard_write_elap_t = default_timer() - st
             return file_buffer_bytes, writer_profile
 
