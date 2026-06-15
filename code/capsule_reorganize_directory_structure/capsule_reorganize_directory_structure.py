@@ -15,7 +15,7 @@ import shared.simple_writer_no_spatial_indexing as simple_writer_no_spatial_inde
 import shared.annotations as anno
 import shared.utilities as utilities
 
-from util import *
+from shared.util import *
 
 def generate_info_files(max_tree_level_all_shards, annotation_type):
     targets = ["unsharded", "sharded"] if config['SPATIAL_INDEX_UNSHARDED_ENABLED'] else ["sharded"]
