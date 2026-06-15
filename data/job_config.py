@@ -81,17 +81,6 @@
                                                          'object.',
                                             'end_pt_column_label': 'post',
                                             'start_pt_column_label': 'pre'},
-                 'pipeline_config': {'docstring': 'All settings in this '
-                                                  'section are optional. This '
-                                                  'section can be completely '
-                                                  'empty if you wish. However, '
-                                                  'if you need to override any '
-                                                  'default pipeline '
-                                                  'configuration settings, '
-                                                  'they go here. See the '
-                                                  'pipeline documentation for '
-                                                  'a description of such '
-                                                  'options.'},
                  'properties': {'synapse_size': {'enum_labels': None,
                                                  'enum_values': None,
                                                  'id': 'size',
@@ -118,10 +107,10 @@
  'LOGGING_FORMAT': '%(message)s',
  'LOGGING_LEVEL': 'debug',
  'MINISHARD_TARGET_COUNT': 1000,
- 'NEUROGLANCER_URI': 'gs://keith-dev/ng_precomputed_annotations_unreleased/9999-01-01_01-01-01_UTC/',
+ 'NEUROGLANCER_URI': 'gs://keith-dev/ng_precomputed_annotations_unreleased/2026-06-15_03-23-40_UTC/',
  'NUM_SHARD_WORKERS': 32,
  'SHARD_TARGET_SIZE': 50000000,
  'SPLIT_DESC': 6000000,
  'SUBSPLIT_DESC': -3,
- 'TIMESTAMP': '9999-01-01_01-01-01_UTC',
+ 'TIMESTAMP': '2026-06-15_03-23-40_UTC',
  'UPLOAD_RESULTS_TO_GCP': True}
