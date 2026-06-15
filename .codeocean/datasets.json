@@ -1,0 +1,9 @@
+{
+	"version": 1,
+	"attached_datasets": [
+		{
+			"id": "bacb8982-892d-437b-b732-de1257e7a398",
+			"mount": "synapses_pni_2_v1_filtered_view__v1412__test1"
+		}
+	]
+}
