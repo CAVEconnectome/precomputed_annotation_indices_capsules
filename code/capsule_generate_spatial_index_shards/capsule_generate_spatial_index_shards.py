@@ -15,7 +15,8 @@ import shared.utilities as utilities
 from shared.util import *
 from shared.ram_data_pond import *
 from shared.aws_storage import *
-import finalize_annotations as fa
+
+import capsule_generate_spatial_index_shards.finalize_annotations as fa
 
 def read_shardworker_file():
     shard_worker_desc_files = list(glob.glob(f"{data_loc}shard_worker*txt"))
