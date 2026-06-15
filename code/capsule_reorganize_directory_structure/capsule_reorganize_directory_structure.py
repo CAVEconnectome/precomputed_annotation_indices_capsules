@@ -8,7 +8,8 @@ import pandas as pd
 import json
 import random
 import shutil
-from google_storage import *
+
+from shared.google_storage import *
 
 import shared.simple_writer_no_spatial_indexing as simple_writer_no_spatial_indexing
 import shared.annotations as anno
