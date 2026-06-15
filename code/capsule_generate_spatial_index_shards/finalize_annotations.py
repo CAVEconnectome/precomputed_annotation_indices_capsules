@@ -11,7 +11,8 @@ import csv
 import random
 import shutil
 import tarfile
-from google_storage import *
+
+from shared.google_storage import *
  
 import shared.simple_writer_no_spatial_indexing as simple_writer_no_spatial_indexing
 import shared.annotations as anno
