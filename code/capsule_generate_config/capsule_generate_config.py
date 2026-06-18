@@ -158,7 +158,8 @@ if __name__ == "__main__":
         logging.info(f"Added ID column since one wasn't configured: {id_column_name_w_suffix}\n")
     
     # Calculate the split size for the indicated data source using the configured SPLIT_DESC add the corresponding 'data_size' key.
-    if args.data_source_name.lower() not in ["", " ", "na", "none", "unspecified"]:
+    if args.data_source_name is not None and \
+        args.data_source_name.lower() not in ["", " ", "na", "none", "unspecified"]:
         for data_source_name, one_data_size in config['DATA_CONFIG']['data_sizes'].items():
             if data_source_name == "docstring":
                 continue
