@@ -451,7 +451,7 @@ class Annotation(ABC):
             output.write(b"\x00" * padding_needed)
         # pylint: enable=too-many-branches
         
-        logger.debug(f"Annotation.write_properties() {bytes_written} {padding_needed}")
+        # logger.debug(f"Annotation.write_properties() {bytes_written} {padding_needed}")
 
     def read_properties(
         self, in_stream: IO[bytes], property_specs: Sequence["PropertySpec"]
@@ -535,10 +535,10 @@ class Annotation(ABC):
                     related_ids = [related_ids]  # type: ignore
                 assert isinstance(related_ids, (list, tuple))
                 output.write(struct.pack("<I", len(related_ids)))
-                logger.debug(f"Annotation.write() len(related_ids): {len(related_ids)}")
+                # logger.debug(f"Annotation.write() len(related_ids): {len(related_ids)}")
                 for idnum in related_ids:
                     output.write(struct.pack("<Q", idnum))
-                    logger.debug(f"Annotation.write() Relation id: {idnum}")
+                    # logger.debug(f"Annotation.write() Relation id: {idnum}")
 
     @classmethod
     def read(
@@ -681,7 +681,7 @@ class LineAnnotation(Annotation):
 
     def write_geometry(self, output: IO[bytes]) -> None:
         """Write start and end positions as float32le values."""
-        logger.debug(f"LineAnnotation.write_geometry() {self.start} {self.end}")
+        # logger.debug(f"LineAnnotation.write_geometry() {self.start} {self.end}")
         output.write(struct.pack("<3f", *self.start))
         output.write(struct.pack("<3f", *self.end))
 
