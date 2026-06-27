@@ -236,6 +236,7 @@ if __name__ == "__main__":
     config = read_config(["id", "relation", "spatial"])
 
     # Debug
+    config['SPATIAL_INDEX_ENABLED'] = False
     config['SPATIAL_INDEX_UNSHARDED_ENABLED'] = False
     config['SPATIAL_SHARDING_HASH'] = "murmurhash3_x86_128"
     config['TREE_LEVEL_SHARDING_SPECS'] = [None]
