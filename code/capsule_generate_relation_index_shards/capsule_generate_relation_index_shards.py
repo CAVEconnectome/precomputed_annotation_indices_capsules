@@ -718,14 +718,16 @@ if __name__ == "__main__":
         logging.info("\n" + "* " * 50 + "\n")
 
         if not os.path.exists(f"{data_loc}DEBUG_FLAG.txt"):
-            # To reduce CO storage, there is no need to save the results after uploading them to GCP
-            # Note that deleting this outputs and thereby avoiding copying them to the final results
-            # doesn't make the capsule run any faster...I think! I'm not sure.
-            logging.info(f"\nDeleting result files after uploading to GCP")
-            for relation_key in all_relation_keys:
-                if os.path.exists(f"{results_loc}{relation_key}"):
-                    shutil.rmtree(f"{results_loc}{relation_key}")
-            timestamps.append(("delete results", default_timer()))
+            # Only do this if GCP uploading is enabled since, if it is disabled, the user may explicitly wish to retrieve the results to use them some other nonGCP way.
+            if config['UPLOAD_RESULTS_TO_GCP']:
+                # To reduce CO storage, there is no need to save the results after uploading them to GCP
+                # Note that deleting this outputs and thereby avoiding copying them to the final results
+                # doesn't make the capsule run any faster...I think! I'm not sure.
+                logging.info(f"\nDeleting result files after uploading to GCP")
+                for relation_key in all_relation_keys:
+                    if os.path.exists(f"{results_loc}{relation_key}"):
+                        shutil.rmtree(f"{results_loc}{relation_key}")
+                timestamps.append(("delete results", default_timer()))
 
         # logging.error("\nWriter profiles:")
         # for shard_hex, writer_profile in writer_profiles:
