@@ -238,7 +238,7 @@ if __name__ == "__main__":
     # Debug
     config['SPATIAL_INDEX_UNSHARDED_ENABLED'] = False
     config['SPATIAL_SHARDING_HASH'] = "murmurhash3_x86_128"
-    spatial_config['TREE_LEVEL_SHARDING_SPECS'] = [None]
+    config['TREE_LEVEL_SHARDING_SPECS'] = [None]
 
     logging.basicConfig(level=get_logging_level_from_desc(config['LOGGING_LEVEL']), handlers=[
             logging.StreamHandler(sys.stdout),
