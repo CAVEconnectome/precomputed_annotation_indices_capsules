@@ -233,6 +233,10 @@ if __name__ == "__main__":
     logging.critical("REORGANIZE DIRECTORY STRUCTURE")
 
     config = read_config(["id", "relation", "spatial"])
+
+    # Debug
+    config['SPATIAL_INDEX_UNSHARDED_ENABLED'] = False
+
     logging.basicConfig(level=get_logging_level_from_desc(config['LOGGING_LEVEL']), handlers=[
             logging.StreamHandler(sys.stdout),
             logging.FileHandler(f"{results_loc}/logs/log_reorganize_directory_structure_{logging_uid}.log", mode="a")
