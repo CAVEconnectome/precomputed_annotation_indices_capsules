@@ -157,19 +157,19 @@ class SimpleWriter:
 
         # then write the annotation data
         for anno in annotations:
-            logger.debug(f"\nWriter.compile_multi_annotation_buffer(): Writing annotation:\n  {anno}\n  with property_specs {self.property_specs}")
+            # logger.debug(f"\nWriter.compile_multi_annotation_buffer(): Writing annotation:\n  {anno}\n  with property_specs {self.property_specs}")
             anno.write(buffer, self.property_specs)
         
-            logger.debug(f"Writer.compile_multi_annotation_buffer(): Buffer length so far: {buffer.getbuffer().nbytes} B")
+            # logger.debug(f"Writer.compile_multi_annotation_buffer(): Buffer length so far: {buffer.getbuffer().nbytes} B")
         
         logger.debug(f"Writer.compile_multi_annotation_buffer(): Buffer length so far: {buffer.getbuffer().nbytes} B")
 
         # finally write the ids at the end of the buffer
         for anno in annotations:
-            logger.debug(f"\nWriter.compile_multi_annotation_buffer(): Writing annotation id: {anno.id}")
+            # logger.debug(f"\nWriter.compile_multi_annotation_buffer(): Writing annotation id: {anno.id}")
             buffer.write(struct.pack("<Q", anno.id))
         
-            logger.debug(f"Writer.compile_multi_annotation_buffer(): Buffer length so far: {buffer.getbuffer().nbytes} B")
+            # logger.debug(f"Writer.compile_multi_annotation_buffer(): Buffer length so far: {buffer.getbuffer().nbytes} B")
         
         logger.debug(f"Writer.compile_multi_annotation_buffer(): Wrote buffer of final length: {buffer.getbuffer().nbytes} B")
 
