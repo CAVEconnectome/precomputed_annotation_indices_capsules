@@ -20,9 +20,9 @@ spatial_config = {
     "SPATIAL_INDEX_UNSHARDED_ENABLED": False,  # The capsule that performs this has not been maintained. It will require development to turn this back on.
 
     "SPATIAL_SHARDING_HASH": "murmurhash3_x86_128",  #  "murmurhash3_x86_128", "identity"
-    "DEBUG_SPATIAL_PRESHIFT_BITS": 0,
-    "DEBUG_SPATIAL_SHARDING_BITS": 3,
-    "DEBUG_SPATIAL_MINISHARDING_BITS": 0,
+    "DEFAULT_SPATIAL_PRESHIFT_BITS": 0,
+    "DEFAULT_SPATIAL_SHARDING_BITS": None,  # 3,  # Set to None to autogenerate the sharding spec
+    "DEFAULT_SPATIAL_MINISHARDING_BITS": 0,
     
     # Similar to NUM_ROOT_ID_WORKERS but for a different pipeline.
     # Setting this to the max value of 8 effectively disables its utility as a conglomerator of tree outputs into a smaller number of workers, since each subtree at every level will to a new Code Ocean capsule.
@@ -125,15 +125,8 @@ if __name__ == "__main__":
     logging.critical(f"\nGenerated sharding spec will produce 2^{sharding_spec['shard_bits']} = {2**sharding_spec['shard_bits']} shard files")
 
     # DEBUG
-    # I developed this pipeline against hard-coded sharding specs of 0 preshift,
-    # 4 sharding, and 3 minisharding, which would yield 16 shards and a relatively
-    # good spread of data across the shards. The upgrade to a more sophisticated
-    # sharding spec, ala Jeremy's code in the sharding_spec_calculations.py script,
-    # has resulted in a much larger number of shards (upwards of 1024), but producing
-    # a spec that assigns all data to a single shard. So for the time being,
-    # I'm commenting this out, leaving the development defaults place.
-    debug = False
-    if not debug:
+    # spatial_config['DEFAULT_SPATIAL_SHARDING_BITS'] == None indicates to autogenerate the sharding parameters. Otherwise, use the defaults.
+    if spatial_config['DEFAULT_SPATIAL_SHARDING_BITS'] is None:
         spatial_config['TREE_LEVEL_SHARDING_SPECS'] = [None] * spatial_config['MAX_NUM_TREE_LEVELS']
         for tree_level in range(spatial_config['MAX_NUM_TREE_LEVELS']):
             logging.critical("\n" + "_" * 100)
@@ -158,14 +151,14 @@ if __name__ == "__main__":
             # if spatial_config['TREE_LEVEL_SHARDING_SPECS'][tree_level]['preshift_bits'] != 0:
             #     raise ValueError("Indexing doesn't support sharding specs with preshift-bits other than 0. The resulting index won't work in Neuroglancer. I have no idea what's wrong at the current time.")
     else:
-        logging.critical(f"DEBUG! Dynamically generated sharding spec is currently overridden. Hard-coded values:\n  Preshift:     {spatial_config['DEBUG_SPATIAL_PRESHIFT_BITS']}\n  Sharding:     {spatial_config['DEBUG_SPATIAL_SHARDING_BITS']}\n  Minisharding: {spatial_config['DEBUG_SPATIAL_MINISHARDING_BITS']}")
+        logging.critical(f"DEBUG! Dynamically generated sharding spec is currently overridden. Hard-coded values:\n  Preshift:     {spatial_config['DEFAULT_SPATIAL_PRESHIFT_BITS']}\n  Sharding:     {spatial_config['DEFAULT_SPATIAL_SHARDING_BITS']}\n  Minisharding: {spatial_config['DEFAULT_SPATIAL_MINISHARDING_BITS']}")
 
         spatial_config['TREE_LEVEL_SHARDING_SPECS'] = [None] * spatial_config['MAX_NUM_TREE_LEVELS']
         for tree_level in range(spatial_config['MAX_NUM_TREE_LEVELS']):
             spatial_config['TREE_LEVEL_SHARDING_SPECS'][tree_level] = {
-                "preshift_bits":  spatial_config["DEBUG_SPATIAL_PRESHIFT_BITS"],
-                "shard_bits":     spatial_config["DEBUG_SPATIAL_SHARDING_BITS"],
-                "minishard_bits": spatial_config["DEBUG_SPATIAL_MINISHARDING_BITS"],
+                "preshift_bits":  spatial_config["DEFAULT_SPATIAL_PRESHIFT_BITS"],
+                "shard_bits":     spatial_config["DEFAULT_SPATIAL_SHARDING_BITS"],
+                "minishard_bits": spatial_config["DEFAULT_SPATIAL_MINISHARDING_BITS"],
             }
         
         # Spread the small deveopment dataset out over the tree levels for development

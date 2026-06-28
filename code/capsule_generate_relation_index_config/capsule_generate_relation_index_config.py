@@ -20,7 +20,7 @@ relation_config = {
 
     "RELATION_SHARDING_HASH": "murmurhash3_x86_128",  #  "murmurhash3_x86_128", "identity"
     "RELATION_PRESHIFT_BITS": 0,
-    "RELATION_SHARDING_BITS": 1,
+    "RELATION_SHARDING_BITS": None,  # 1,  # Set to None to autogenerate the sharding spec
     "RELATION_MINISHARDING_BITS": 0,
 
     # Relationship index column names
@@ -85,15 +85,8 @@ if __name__ == "__main__":
         relation_config['PARQUET_ENGINE'] = relation_config['ARCHIVE_FORMAT'].split('_')[1]
 
     # DEBUG
-    # I developed this pipeline against hard-coded sharding specs of 0 preshift,
-    # 4 sharding, and 3 minisharding, which would yield 16 shards and a relatively
-    # good spread of data across the shards. The upgrade to a more sophisticated
-    # sharding spec, ala Jeremy's code in the sharding_spec_calculations.py script,
-    # has resulted in a much larger number of shards (upwards of 1024), but producing
-    # a spec that assigns all data to a single shard. So for the time being,
-    # I'm commenting this out, leaving the development defaults place.
-    debug = False
-    if not debug:
+    # id_config['RELATION_SHARDING_BITS'] == None indicates to autogenerate the sharding parameters. Otherwise, use the defaults.
+    if relation_config['RELATION_SHARDING_BITS'] is None:
         relation_config['RELATION_PRESHIFT_BITS'] = sharding_spec["preshift_bits"]
         relation_config['RELATION_SHARDING_BITS'] = sharding_spec["shard_bits"]
         relation_config['RELATION_MINISHARDING_BITS'] = sharding_spec["minishard_bits"]
