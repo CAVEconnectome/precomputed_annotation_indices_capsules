@@ -48,23 +48,23 @@ def generate_info_files(max_tree_level_all_shards, annotation_type):
                     writer.property_specs.append(anno.PropertySpec(f"vector_{dim}", "float32", f"vector_{dim}", None, None))
 
         # Debug
-        # bounds_range = [cell_bounds_high[d] - cell_bounds_low[d] for d in range(3)]
-        # voxel_extent = [
-        #     bounds_range[0],
-        #     bounds_range[1],
-        #     bounds_range[2],
-        # ]
-        # for tree_level_ve in range(max_tree_level_all_shards+1):
-        #     spatial_sharding_spec = anno.ShardingSpec(
-        #         hash=config['SPATIAL_SHARDING_HASH'],
-        #         preshift_bits=config['TREE_LEVEL_SHARDING_SPECS'][tree_level_ve]['preshift_bits'],
-        #         shard_bits=config['TREE_LEVEL_SHARDING_SPECS'][tree_level_ve]['shard_bits'],
-        #         minishard_bits=config['TREE_LEVEL_SHARDING_SPECS'][tree_level_ve]['minishard_bits']
-        #     ) if sharded == "sharded" else None
+        bounds_range = [cell_bounds_high[d] - cell_bounds_low[d] for d in range(3)]
+        voxel_extent = [
+            bounds_range[0],
+            bounds_range[1],
+            bounds_range[2],
+        ]
+        for tree_level_ve in range(max_tree_level_all_shards+1):
+            spatial_sharding_spec = anno.ShardingSpec(
+                hash=config['SPATIAL_SHARDING_HASH'],
+                preshift_bits=config['TREE_LEVEL_SHARDING_SPECS'][tree_level_ve]['preshift_bits'],
+                shard_bits=config['TREE_LEVEL_SHARDING_SPECS'][tree_level_ve]['shard_bits'],
+                minishard_bits=config['TREE_LEVEL_SHARDING_SPECS'][tree_level_ve]['minishard_bits']
+            ) if sharded == "sharded" else None
             
-        #     limit = config['MAX_DATA_ROWS_PER_TREE_CELL']
-        #     writer.spatial_specs.append(anno.SpatialEntry(voxel_extent, [2**tree_level_ve, 2**tree_level_ve, 2**tree_level_ve], f"spatial{tree_level_ve}", limit, sharding=spatial_sharding_spec))
-        #     voxel_extent = [v/2 for v in voxel_extent]
+            limit = config['MAX_DATA_ROWS_PER_TREE_CELL']
+            writer.spatial_specs.append(anno.SpatialEntry(voxel_extent, [2**tree_level_ve, 2**tree_level_ve, 2**tree_level_ve], f"spatial{tree_level_ve}", limit, sharding=spatial_sharding_spec))
+            voxel_extent = [v/2 for v in voxel_extent]
         
         relation_sharding_spec = anno.ShardingSpec(
             hash=config['RELATION_SHARDING_HASH'],
@@ -236,10 +236,10 @@ if __name__ == "__main__":
     config = read_config(["id", "relation", "spatial"])
 
     # Debug
-    config['SPATIAL_INDEX_ENABLED'] = False
-    config['SPATIAL_INDEX_UNSHARDED_ENABLED'] = False
-    config['SPATIAL_SHARDING_HASH'] = "murmurhash3_x86_128"
-    config['TREE_LEVEL_SHARDING_SPECS'] = [None]
+    # config['SPATIAL_INDEX_ENABLED'] = False
+    # config['SPATIAL_INDEX_UNSHARDED_ENABLED'] = False
+    # config['SPATIAL_SHARDING_HASH'] = "murmurhash3_x86_128"
+    # config['TREE_LEVEL_SHARDING_SPECS'] = [None]
 
     logging.basicConfig(level=get_logging_level_from_desc(config['LOGGING_LEVEL']), handlers=[
             logging.StreamHandler(sys.stdout),
