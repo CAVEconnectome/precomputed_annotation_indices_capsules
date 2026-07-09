@@ -254,6 +254,24 @@ def build_annotation(annotation_description):
             relations=annotation_description.get("relations", {})
         )
 
+def calculate_annotation_vector(points):
+    """
+    At the time of this writing, vectors are only implemented against a single CSV field containing a semi-colon delimited list of comma-delimited points.
+    """
+    vx_sum, vy_sum, vz_sum = 0, 0, 0
+    prev_pt = None
+    for pt in points.values():
+        if prev_pt:
+            vx_sum += pt[0] - prev_pt[0]
+            vy_sum += pt[1] - prev_pt[1]
+            vz_sum += pt[2] - prev_pt[2]
+        prev_pt = pt
+    vx_mean = vx_sum - (len(points) - 1)
+    vy_mean = vy_sum - (len(points) - 1)
+    vz_mean = vz_sum - (len(points) - 1)
+
+    return vx_mean, vy_mean, vz_mean
+
 def build_annotation_description__one_annotation_per_row__multiple_points_per_row(row, columns, pt_positions, data_property_col_indices, data_relation_col_index):
     relation_fields = convert_relation_fields(row, [data_relation_col_index])
 

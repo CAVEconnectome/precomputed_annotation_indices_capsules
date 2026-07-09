@@ -224,6 +224,24 @@ def convert_relation_fields(relation_fields):
     
     return relation_fields
 
+def calculate_annotation_vector(points):
+    """
+    At the time of this writing, vectors are only implemented against a single CSV field containing a semi-colon delimited list of comma-delimited points.
+    """
+    vx_sum, vy_sum, vz_sum = 0, 0, 0
+    prev_pt = None
+    for pt in points.values():
+        if prev_pt:
+            vx_sum += pt[0] - prev_pt[0]
+            vy_sum += pt[1] - prev_pt[1]
+            vz_sum += pt[2] - prev_pt[2]
+        prev_pt = pt
+    vx_mean = vx_sum - (len(points) - 1)
+    vy_mean = vy_sum - (len(points) - 1)
+    vz_mean = vz_sum - (len(points) - 1)
+
+    return vx_mean, vy_mean, vz_mean
+
 def build_annotation_description_from_row_tuple__one_annotation_per_row__multiple_points_per_row(row, columns, pt_positions, data_property_by_col_idx, data_relation_by_col_idx):
     relation_fields = {col: row[col_idx] for col, col_idx in data_relation_by_col_idx.items()}
     relation_fields = convert_relation_fields(relation_fields)
