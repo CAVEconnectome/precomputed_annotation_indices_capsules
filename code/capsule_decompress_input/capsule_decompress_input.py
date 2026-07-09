@@ -83,7 +83,7 @@ if __name__ == "__main__":
                 else:
                     raise TypeError(f"Unknown file type (not a file or a directory): {input_subpath}")
         else:
-            raise RuntimeError("No uncompressed input files found indicated by config.")
+            raise RuntimeError("No uncompressed input files found indicated by config. Accepted formats: CSV, Parquet, SWC.\nNOTE! Make sure the Connection Type leading from the dataset to this split-generation capsule was reassigned from 'Default' to 'Collect'!")
     
     finalize_results(results_loc)
 
