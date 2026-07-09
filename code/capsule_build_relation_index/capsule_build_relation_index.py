@@ -60,10 +60,10 @@ def process_row(row_idx, fields, header_reverse_map, sharding_spec, shard_lines,
         if isinstance(relation_field, int):
             relation_list = [relation_field]
         elif isinstance(relation_field, str):
-            if relation_field[0] != '[':
-                relation_field = '[' + relation_field
-            if relation_field[-1] != ']':
-                relation_field += ']'
+            if relation_field[0] != "['":
+                relation_field = "['" + relation_field
+            if relation_field[-1] != "']":
+                relation_field += "']"
             relation_list = ast.literal_eval(relation_field)
         else:
             raise ValueError(f"{relation_field}: {type(relation_field)}")
