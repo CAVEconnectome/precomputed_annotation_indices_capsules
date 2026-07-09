@@ -357,7 +357,6 @@ def build_annotation_description__one_annotation_per_row__multiple_points_per_ro
     # data_properties_cols = [(prop_lbl, prop_info['id']) for prop_lbl, prop_info in data_properties.items()]
     # data_property_col_indices = [(prop_col, col_index_map[prop_col]) for prop_lbl, prop_col in data_properties_cols]
 
-    add_vector_property = False
     for prop_lbl, prop_info in config['DATA_CONFIG']['properties'].items():
         if debug:
             logging.info(f"\nProp: {prop_lbl} {prop_info}")
@@ -375,7 +374,6 @@ def build_annotation_description__one_annotation_per_row__multiple_points_per_ro
                 desc["properties"]['vector_x'] = vec[0]
                 desc["properties"]['vector_y'] = vec[1]
                 desc["properties"]['vector_z'] = vec[2]
-            add_vector_property = True
         elif prop_info['type'] == "rgb":
             if field[0] == '#':
                 desc["properties"][prop_id] = hex_to_rgb(field)

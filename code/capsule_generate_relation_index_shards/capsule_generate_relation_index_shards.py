@@ -267,11 +267,26 @@ def build_annotation_description__one_annotation_per_row__multiple_points_per_ro
 
     for prop_lbl, prop_info in config['DATA_CONFIG']['properties'].items():
         prop_id = prop_lbl  # prop_info['id']
-        col_idx = col_index_map[prop_info['id']]
-        field = row[col_idx]
-        if prop_info['enum_values'] is None:
-            desc["properties"][prop_id] = field
-        else:
+        col_idx = col_index_map[prop_info['id']] if prop_info['id'] is not None else None
+        field = row[col_idx] if col_idx is not None else None
+
+        if prop_info['type'] == "vector":
+            vec = calculate_annotation_vector(pt_positions)
+            if vec:
+                desc["properties"]['vector_x'] = vec[0]
+                desc["properties"]['vector_y'] = vec[1]
+                desc["properties"]['vector_z'] = vec[2]
+        elif prop_info['type'] == "rgb":
+            if field[0] == '#':
+                desc["properties"][prop_id] = hex_to_rgb(field)
+            else:
+                raise ValueError(f"Only Hex colors are currently supported: {field}")
+        elif prop_info['type'] == "rgba":
+            if field[0] == '#':
+                desc["properties"][prop_id] = hex_to_rgba(field)
+            else:
+                raise ValueError(f"Only Hex colors are currently supported: {field}")
+        elif prop_info['enum_values'] is not None:
             # This will raise a ValueError if the field value isn't in the property info's enum_labels list
             if field in prop_info['enum_labels']:
                 enum_label_idx = prop_info['enum_labels'].index(field)
@@ -280,7 +295,12 @@ def build_annotation_description__one_annotation_per_row__multiple_points_per_ro
                 missing_enum_labels.add(field)
                 enum_value = -1
             desc["properties"][prop_id] = enum_value
-
+        else:
+            desc["properties"][prop_id] = field
+        
+        if debug:
+            logging.info(f"Anno prop: {desc['properties'][prop_id]}")
+    
     if 'point_annotation_config' in config['DATA_CONFIG']:
         desc["position"] = pt_positions[config['DATA_CONFIG']["point_annotation_config"]["pt_column_label"]]
     elif 'line_annotation_config' in config['DATA_CONFIG']:

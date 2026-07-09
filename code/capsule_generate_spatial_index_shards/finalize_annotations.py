@@ -23,7 +23,7 @@ from shared.shard_reader import *
 from shared.util import *
 from shared.aws_storage import *
 
-data_loc, results_loc, config, timestamps, dimensions = None, None, None, None, None
+data_loc, results_loc, config, timestamps, dimensions, missing_enum_labels = None, None, None, None, None, None
 
 # Pick one: changing this requires altering the pipeline topology
 # OUTPUT_STYLE = "capsule"  # Pipeline must connect this capsule to the 'reorganize directory structure' capsule with 'Collect' type
@@ -246,10 +246,16 @@ def build_annotation_description_from_row_tuple__one_annotation_per_row__multipl
 
     for prop_lbl, prop_info in config['DATA_CONFIG']['properties'].items():
         prop_id = prop_lbl  # prop_info['id']
-        col_idx = col_index_map[prop_info['id']]
-        field = row[col_idx]
+        col_idx = col_index_map[prop_info['id']] if prop_info['id'] is not None else None
+        field = row[col_idx] if col_idx is not None else None
 
-        if prop_info['type'] == "rgb":
+        if prop_info['type'] == "vector":
+            vec = calculate_annotation_vector(pt_positions)
+            if vec:
+                desc["properties"]['vector_x'] = vec[0]
+                desc["properties"]['vector_y'] = vec[1]
+                desc["properties"]['vector_z'] = vec[2]
+        elif prop_info['type'] == "rgb":
             if field[0] == '#':
                 desc["properties"][prop_id] = hex_to_rgb(field)
             else:
@@ -929,7 +935,7 @@ def main():
         treelevel-04_shard-2/synapses_one_shard__treelevel-04__shard-2.csv
         treelevel-04_shard-3/synapses_one_shard__treelevel-04__shard-3.csv
     """
-    global data_loc, results_loc, config, timestamps, dimensions
+    global data_loc, results_loc, config, timestamps, dimensions, missing_enum_labels
 
     data_loc = "../data/"
     results_loc = "../results/"
