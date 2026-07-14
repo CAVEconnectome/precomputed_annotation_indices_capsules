@@ -46,6 +46,31 @@ def get_shard_hex(shard_number: int, shard_bits: int, force_str: bool) -> str:
     # return f"{'"' if force_str else ''}{shard_number:0{padding}x}{'"' if force_str else ''}"
     return f"{'_' if force_str else ''}{shard_number:0{padding}x}"
 
+def convert_non_int_relation_via_enum_property(row_idx, relation_val, relationship_column_name):
+    if row_idx == 0:
+        logging.info(f"Relation column {relationship} doesn't contain 'int' data. Looking in the data config for a corresponding enumerated property description.")
+    found_it = False
+    for prop_lbl, prop_info in config['DATA_CONFIG']['properties'].items():
+        if prop_info['id'] == relationship_column_name:
+            if prop_info['enum_values'] is not None:
+                if row_idx == 0:
+                    logging.info(f"Found an enum property config")
+                if relation_val in prop_info['enum_labels']:
+                    if row_idx == 0:
+                        logging.info(f"Found the enum value")
+                    enum_label_idx = prop_info['enum_labels'].index(relation_val)
+                    enum_value = prop_info['enum_values'][enum_label_idx]
+                else:
+                    if row_idx == 0:
+                        logging.info(f"Found a missing enum value: {relation_val} {prop_info}")
+                    missing_enum_labels.add(relation_val)
+                    enum_value = -1
+                relation_val = enum_value
+                found_it = True
+    if not found_it:
+        raise TypeError(f"Relation column '{relationship}' does not contain 'int' data and has no associated enumerated property description from which to derive an 'int' value.")
+    return relation_val
+
 def process_row(row_idx, fields, header_reverse_map, sharding_spec, shard_lines, force_str: bool):
     # logging.info(f"process_row() id: {row_idx}")
 
@@ -70,7 +95,13 @@ def process_row(row_idx, fields, header_reverse_map, sharding_spec, shard_lines,
         assert isinstance(relation_list, list)
 
         for relation_val in relation_list:
-            assert isinstance(relation_val, int)
+            # This is a bit of a hack.
+            # Originally, relations were only supported as ints, as per the spec.
+            # However, we need to support scenarios in which a column is used as both a relation and an enumerated property.
+            # So, if the relation value isn't an int, before we bail with an error, let's check if there is enum property info we can apply.
+            if not isinstance(relation_val, int):
+                relation_val = convert_non_int_relation_via_enum_property(row_idx, relation_val, relationship_column_name)
+
             shard_num = sharding_spec.get_shard_number(relation_val)
             # minishard_num = sharding_spec.get_minishard_number(relation_val)
             shard_hex = get_shard_hex(shard_num, sharding_spec.shard_bits, force_str)
@@ -209,12 +240,12 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
         logging.info(f"\nNum lines (rows) in split: {len(df)}")
 
         pd.set_option('display.max_columns', None)
-        logging.info(f"AAA\n{df}")
+        # logging.info(f"AAA\n{df}")
         if id_column is None:
             logging.info("Adding ID column since one wasn't configured: {columns[0]}")
             df.insert(0, columns[0], np.arange(split_id_start, split_id_start+len(df)))
-        logging.info(f"BBB\n{df}")
-        logging.info(f"CCC\n{df[columns[0]]}")
+        # logging.info(f"BBB\n{df}")
+        # logging.info(f"CCC\n{df[columns[0]]}")
 
         timestamps.append(("process_input_file() insert ID column", default_timer()))
 
@@ -638,6 +669,8 @@ if __name__ == "__main__":
     logging.getLogger('annotations').setLevel(
         get_logging_level_from_desc(config['PRECOMPUTED_FILE_WRITER_LOGGING_LEVEL']))
 
+    missing_enum_labels = set()
+    
     if config['RELATION_INDEX_ENABLED']:
         timestamps = []
         timestamps.append(("start", default_timer()))
@@ -711,6 +744,10 @@ if __name__ == "__main__":
         logging.error("Accumulated elapsed timestamps:")
         for label, elap_t in accum_elapsed_times.items():
             logging.error(f"  {seconds_to_hms(elap_t)} {label}")
+    
+    if missing_enum_labels:
+        logging.error(f"Missing enum labels: {missing_enum_labels}")
+        raise ValueError(f"Missing enum labels: {missing_enum_labels}")
     
     finalize_results(results_loc)
     

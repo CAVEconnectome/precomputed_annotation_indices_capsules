@@ -190,11 +190,29 @@ def validate_shard_file(filepath, tree_level, property_specs):
     shardfile_reader.read()
     logging.info(f"Shard file is valid: {filepath}")
 
+def convert_non_int_relation_via_enum_property(relation_val, relationship_column_name):
+    found_it = False
+    for prop_lbl, prop_info in config['DATA_CONFIG']['properties'].items():
+        if prop_info['id'] == relationship_column_name:
+            if prop_info['enum_values'] is not None:
+                if relation_val in prop_info['enum_labels']:
+                    enum_label_idx = prop_info['enum_labels'].index(relation_val)
+                    enum_value = prop_info['enum_values'][enum_label_idx]
+                else:
+                    missing_enum_labels.add(relation_val)
+                    enum_value = -1
+                relation_val = enum_value
+                found_it = True
+    if not found_it:
+        raise TypeError(f"Relation column '{relationship_column_name}' does not contain 'int' data and has no associated enumerated property description from which to derive an 'int' value.")
+    return relation_val
+
 def convert_relation_fields(relation_fields):
     # logging.info(f"convert_relation_fields(): {relation_fields}")
 
     # Convert relation fields to either an int or a list of ints
-    for col, relation_field_str in relation_fields.items():
+    relation_fields_out = {}
+    for lbl, (col, relation_field_str) in relation_fields.items():
         # Casting a float to an int won't raise an exception. We have to check for a float explicitly.
         if '.' in relation_field_str:
             raise ValueError(f"Relation field must be int or list of ints: {relation_field_str}")
@@ -204,7 +222,9 @@ def convert_relation_fields(relation_fields):
             relation_field = int(relation_field_str)
         except:
             try:
-                # Try casting the field as an list (we have already established it isn't a float above)
+                relation_field_str = str(convert_non_int_relation_via_enum_property(relation_field_str, col))
+                
+                # Try casting the field as a list (we have already established it isn't a float above)
                 if relation_field_str[0] != '[':
                     relation_field_str = '[' + relation_field_str
                 if relation_field_str[-1] != ']':
@@ -220,9 +240,9 @@ def convert_relation_fields(relation_fields):
             except:
                 raise ValueError(f"Relation field must be int or list of ints: {relation_field_str}")
         
-        relation_fields[col] = relation_field
+        relation_fields_out[col] = relation_field
     
-    return relation_fields
+    return relation_fields_out
 
 def calculate_annotation_vector(points):
     """
@@ -243,7 +263,7 @@ def calculate_annotation_vector(points):
     return vx_mean, vy_mean, vz_mean
 
 def build_annotation_description_from_row_tuple__one_annotation_per_row__multiple_points_per_row(row, columns, pt_positions, data_property_by_col_idx, data_relation_by_col_idx):
-    relation_fields = {col: row[col_idx] for col, col_idx in data_relation_by_col_idx.items()}
+    relation_fields = {col: (col, row[col_idx]) for col, col_idx in data_relation_by_col_idx.items()}
     relation_fields = convert_relation_fields(relation_fields)
     
     id_column = config['DATA_CONFIG']['id_column']
@@ -430,7 +450,7 @@ def save_annotations_as_precomputed(table, columns, cell_bounds_low, cell_bounds
         elif 'id_src' in config['DATA_CONFIG']:
             raise RuntimeError("id_src support (Wan-Qing's swc data) is not implemented yet")
 
-        relation_col_indices = {k: columns.index(v['id']) for k, v in data_relations.items()}
+        relation_col_indices = {k: (v['id'], columns.index(v['id'])) for k, v in data_relations.items()}
         treecell_index_col_idx = columns.index('treecell_index')
         
         if config['DATA_CONFIG']['structure'] == 'one_annotation_per_row__multiple_points_per_row':
@@ -515,7 +535,7 @@ def save_annotations_as_precomputed(table, columns, cell_bounds_low, cell_bounds
                     else:
                         properties[prop_id] = field
                     
-                relation_fields = {k: fields[v] for k, v in relation_col_indices.items()}
+                relation_fields = {k: (c, fields[v]) for k, (c, v) in relation_col_indices.items()}
                 # logging.info(f"relation_fields: {relation_fields}")
                 # The following annotation description is specific to LineAnnotations.
                 # TODO: Generalize or dynimcally build or polymorphically populate other annotation types here.

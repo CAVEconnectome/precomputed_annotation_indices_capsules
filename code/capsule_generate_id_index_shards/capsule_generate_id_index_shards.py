@@ -183,16 +183,35 @@ def save_shard_data_as_csv(rows_this_level_df, subdir, shard_hex):
     logging.info(f"\nWriting shard's CSV file with {len(rows_this_level_df)} rows: {filepath}")
     rows_this_level_df.to_csv(filepath, index=False, header=False)
 
+def convert_non_int_relation_via_enum_property(relation_val, relationship_column_name):
+    found_it = False
+    for prop_lbl, prop_info in config['DATA_CONFIG']['properties'].items():
+        if prop_info['id'] == relationship_column_name:
+            if prop_info['enum_values'] is not None:
+                if relation_val in prop_info['enum_labels']:
+                    enum_label_idx = prop_info['enum_labels'].index(relation_val)
+                    enum_value = prop_info['enum_values'][enum_label_idx]
+                else:
+                    missing_enum_labels.add(relation_val)
+                    enum_value = -1
+                relation_val = enum_value
+                found_it = True
+    if not found_it:
+        raise TypeError(f"Relation column '{relationship_column_name}' does not contain 'int' data and has no associated enumerated property description from which to derive an 'int' value.")
+    return relation_val
+
 def convert_relation_fields(row, data_relation_col_indices):
     # logging.info(f"convert_relation_fields(): {row}")
     
     # Convert relation fields to either an int or a list of ints
-    relation_fields = {lbl: row[col_idx] for lbl, col_idx in data_relation_col_indices}
-    for lbl, relation_field_val in relation_fields.items():
+    relation_fields = {lbl: (col, row[col_idx]) for lbl, col, col_idx in data_relation_col_indices}
+    for lbl, (col, relation_field_val) in relation_fields.items():
         # The column might already be an int, not a string, so check for that first
         if isinstance(relation_field_val, int):
             relation_field = relation_field_val
         else:
+            relation_field_val = str(convert_non_int_relation_via_enum_property(relation_field_val, col))
+            
             # Casting a float to an int won't raise an exception. We have to check for a float explicitly.
             if '.' in relation_field_val:
                 raise ValueError(f"Relation field must be int or list of ints: {relation_field_val}")
@@ -522,7 +541,7 @@ def save_csv_shard_data_as_precomputed(df, subdir, shard_hex, data_properties, d
 
     # data_relations = config['DATA_CONFIG']['relations']
     # data_relations_cols = [(rel_lbl, rel_info['id']) for rel_lbl, rel_info in data_relations.items()]
-    # data_relation_col_indices = [(rel_lbl, col_index_map[rel_col]) for rel_lbl, rel_col in data_relations_cols]
+    # data_relation_col_indices = [(rel_lbl, rel_col, col_index_map[rel_col]) for rel_lbl, rel_col in data_relations_cols]
 
     writer = save_csv_annotations_as_precomputed(df, data_properties, data_relation_col_indices, col_index_map)
 
@@ -809,7 +828,7 @@ if __name__ == "__main__":
 
             data_relations = config['DATA_CONFIG']['relations']
             data_relations_cols = [(rel_lbl, rel_info['id']) for rel_lbl, rel_info in data_relations.items()]
-            data_relation_col_indices = [(rel_lbl, col_index_map[rel_col]) for rel_lbl, rel_col in data_relations_cols]
+            data_relation_col_indices = [(rel_lbl, rel_col, col_index_map[rel_col]) for rel_lbl, rel_col in data_relations_cols]
 
             if this_shard_input_files:
                 if input_extension == "csv":

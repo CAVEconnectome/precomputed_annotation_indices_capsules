@@ -190,16 +190,35 @@ def save_shard_data_as_csv(rows_this_level_df, subdir, relation_key, relation_co
     logging.info(f"\nWriting shard's CSV file with {len(rows_this_level_df)} rows: {filepath}")
     rows_this_level_df.to_csv(filepath, index=False, header=False)
 
+def convert_non_int_relation_via_enum_property(relation_val, relationship_column_name):
+    found_it = False
+    for prop_lbl, prop_info in config['DATA_CONFIG']['properties'].items():
+        if prop_info['id'] == relationship_column_name:
+            if prop_info['enum_values'] is not None:
+                if relation_val in prop_info['enum_labels']:
+                    enum_label_idx = prop_info['enum_labels'].index(relation_val)
+                    enum_value = prop_info['enum_values'][enum_label_idx]
+                else:
+                    missing_enum_labels.add(relation_val)
+                    enum_value = -1
+                relation_val = enum_value
+                found_it = True
+    if not found_it:
+        raise TypeError(f"Relation column '{relationship_column_name}' does not contain 'int' data and has no associated enumerated property description from which to derive an 'int' value.")
+    return relation_val
+
 def convert_relation_fields(row, data_relation_col_indices):
     # logging.info(f"convert_relation_fields(): {row}")
     
     # Convert relation fields to either an int or a list of ints
-    relation_fields = {lbl: row[col_idx] for lbl, col_idx in data_relation_col_indices}
-    for lbl, relation_field_val in relation_fields.items():
+    relation_fields = {lbl: (col, row[col_idx]) for lbl, col, col_idx in data_relation_col_indices}
+    for lbl, (col, relation_field_val) in relation_fields.items():
         # The column might already be an int, not a string, so check for that first
         if isinstance(relation_field_val, int):
             relation_field = relation_field_val
         else:
+            relation_field_val = str(convert_non_int_relation_via_enum_property(relation_field_val, col))
+            
             # Casting a float to an int won't raise an exception. We have to check for a float explicitly.
             if '.' in relation_field_val:
                 raise ValueError(f"Relation field must be int or list of ints: {relation_field_val}")
@@ -273,10 +292,16 @@ def calculate_annotation_vector(points):
     return vx_mean, vy_mean, vz_mean
 
 def build_annotation_description__one_annotation_per_row__multiple_points_per_row(row, columns, pt_positions, data_property_col_indices, data_relation_col_index):
+    id_column = config['DATA_CONFIG']['id_column']
+    if id_column is None:
+        # If no id column was provided, then it was explicitly added at the left end of the table earlier in the process
+        id_column = columns[0]
+    id_ = row[columns.index(id_column)]
+    
     relation_fields = convert_relation_fields(row, [data_relation_col_index])
 
     desc = {
-        "id": row[columns.index(config['DATA_CONFIG']['id_column'])],
+        "id": id_,
         "properties": {},  # {lbl: row[col_idx] for (lbl, col_idx) in data_property_col_indices},
         "relations": relation_fields,
     }
@@ -316,9 +341,9 @@ def build_annotation_description__one_annotation_per_row__multiple_points_per_ro
         else:
             desc["properties"][prop_id] = field
         
-        if debug:
-            logging.info(f"Anno prop: {desc['properties'][prop_id]}")
-    
+        # if debug:
+        #     logging.info(f"Anno prop: {desc['properties'][prop_id]}")
+
     if 'point_annotation_config' in config['DATA_CONFIG']:
         desc["position"] = pt_positions[config['DATA_CONFIG']["point_annotation_config"]["pt_column_label"]]
     elif 'line_annotation_config' in config['DATA_CONFIG']:
@@ -449,7 +474,7 @@ def save_csv_shard_data_as_precomputed(df, subdir, relation_id, relation_key, re
     data_properties_cols = [(prop_lbl, prop_info['id']) for prop_lbl, prop_info in data_properties.items()]
     data_property_col_indices = [(prop_col, col_index_map[prop_col]) for prop_lbl, prop_col in data_properties_cols]
 
-    data_relation_col_idx = (relation_id, col_index_map[relation_column_name])
+    data_relation_col_idx = (relation_id, relation_column_name, col_index_map[relation_column_name])
 
     writer, relation = save_annotations_as_precomputed(df, data_properties, data_property_col_indices, relation_id, data_relation_col_idx, shard_hex)
 
