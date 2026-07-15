@@ -190,6 +190,30 @@ def validate_shard_file(filepath, tree_level, property_specs):
     shardfile_reader.read()
     logging.info(f"Shard file is valid: {filepath}")
 
+def coerce_relation_field(relation_field):
+    if isinstance(relation_field, int):
+        relation_list = [relation_field]
+    elif isinstance(relation_field, str):
+        # It might a str of an int, e.g.,: 864691135568681196 but the column might encode it as '864691135568681196'.
+        # Or it might not be an int, e.g.,: Jacob Quon's gene_names merscope data.
+        # If it's an int, we need to convert to a list of int.
+        # If it's a str, we need to convert to a list of str.
+        try:
+            literal_val = ast.literal_eval(relation_field)
+            if isinstance(literal_val, int):
+                relation_list = [literal_val]
+            elif isinstance(literal_val, tuple):
+                relation_list = list(literal_val)
+            elif isinstance(literal_val, list):
+                relation_list = literal_val
+        except:
+            # At this point, we will assume the relation data is some sort of enum label, like Jacob Quon's gene_names merscope data, so just wrap it in brackets.
+            relation_list = [relation_field]
+    else:
+        raise ValueError(f"{relation_field}: {type(relation_field)}")
+    assert isinstance(relation_list, list)
+    return relation_list
+
 def convert_non_int_relation_via_enum_property(relation_val, relationship_column_name):
     found_it = False
     for prop_lbl, prop_info in config['DATA_CONFIG']['properties'].items():
@@ -213,34 +237,43 @@ def convert_relation_fields(relation_fields):
     # Convert relation fields to either an int or a list of ints
     relation_fields_out = {}
     for lbl, (col, relation_field_str) in relation_fields.items():
-        # Casting a float to an int won't raise an exception. We have to check for a float explicitly.
-        if '.' in relation_field_str:
-            raise ValueError(f"Relation field must be int or list of ints: {relation_field_str}")
+        relation_list = coerce_relation_field(relation_field_str)
+
+        relation_fields_out[lbl] = []
+        for relation_val in relation_list:
+            # See note in Relation index builder (search for 'enumerated property')
+            if not isinstance(relation_val, int):
+                relation_val = convert_non_int_relation_via_enum_property(row_idx, relation_val, relationship_column_name)
+            relation_fields_out[lbl].append(relation_val)
         
-        try:
-            # Try casting the field as an int (we have already established it isn't a float above)
-            relation_field = int(relation_field_str)
-        except:
-            try:
-                relation_field_str = str(convert_non_int_relation_via_enum_property(relation_field_str, col))
-                
-                # Try casting the field as a list (we have already established it isn't a float above)
-                if relation_field_str[0] != '[':
-                    relation_field_str = '[' + relation_field_str
-                if relation_field_str[-1] != ']':
-                    relation_field_str += ']'
-                relation_field = ast.literal_eval(relation_field_str)
-                if not isinstance(relation_field, list):
-                    raise ValueError(f"Relation field must be int or list of ints: {relation_field_str}")
-                
-                # Ensure that every item in the list is an int
-                for v in relation_field:
-                    if not isinstance(v, int):
-                        raise ValueError(f"Relation field must be int or list of ints: {relation_field_str}")
-            except:
-                raise ValueError(f"Relation field must be int or list of ints: {relation_field_str}")
+        # # Casting a float to an int won't raise an exception. We have to check for a float explicitly.
+        # if '.' in relation_field_str:
+        #     raise ValueError(f"Relation field must be int or list of ints: {relation_field_str}")
         
-        relation_fields_out[col] = relation_field
+        # try:
+        #     # Try casting the field as an int (we have already established it isn't a float above)
+        #     relation_field = int(relation_field_str)
+        # except:
+        #     try:
+        #         relation_field_str = str(convert_non_int_relation_via_enum_property(relation_field_str, col))
+                
+        #         # Try casting the field as a list (we have already established it isn't a float above)
+        #         if relation_field_str[0] != '[':
+        #             relation_field_str = '[' + relation_field_str
+        #         if relation_field_str[-1] != ']':
+        #             relation_field_str += ']'
+        #         relation_field = ast.literal_eval(relation_field_str)
+        #         if not isinstance(relation_field, list):
+        #             raise ValueError(f"Relation field must be int or list of ints: {relation_field_str}")
+                
+        #         # Ensure that every item in the list is an int
+        #         for v in relation_field:
+        #             if not isinstance(v, int):
+        #                 raise ValueError(f"Relation field must be int or list of ints: {relation_field_str}")
+        #     except:
+        #         raise ValueError(f"Relation field must be int or list of ints: {relation_field_str}")
+        
+        # relation_fields_out[col] = relation_field
     
     return relation_fields_out
 

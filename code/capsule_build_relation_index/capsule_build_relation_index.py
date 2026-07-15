@@ -71,6 +71,30 @@ def convert_non_int_relation_via_enum_property(row_idx, relation_val, relationsh
         raise TypeError(f"Relation column '{relationship}' does not contain 'int' data and has no associated enumerated property description from which to derive an 'int' value.")
     return relation_val
 
+def coerce_relation_field(relation_field):
+    if isinstance(relation_field, int):
+        relation_list = [relation_field]
+    elif isinstance(relation_field, str):
+        # It might a str of an int, e.g.,: 864691135568681196 but the column might encode it as '864691135568681196'.
+        # Or it might not be an int, e.g.,: Jacob Quon's gene_names merscope data.
+        # If it's an int, we need to convert to a list of int.
+        # If it's a str, we need to convert to a list of str.
+        try:
+            literal_val = ast.literal_eval(relation_field)
+            if isinstance(literal_val, int):
+                relation_list = [literal_val]
+            elif isinstance(literal_val, tuple):
+                relation_list = list(literal_val)
+            elif isinstance(literal_val, list):
+                relation_list = literal_val
+        except:
+            # At this point, we will assume the relation data is some sort of enum label, like Jacob Quon's gene_names merscope data, so just wrap it in brackets.
+            relation_list = [relation_field]
+    else:
+        raise ValueError(f"{relation_field}: {type(relation_field)}")
+    assert isinstance(relation_list, list)
+    return relation_list
+
 def process_row(row_idx, fields, header_reverse_map, sharding_spec, shard_lines, force_str: bool):
     # logging.info(f"process_row() id: {row_idx}")
 
@@ -80,19 +104,9 @@ def process_row(row_idx, fields, header_reverse_map, sharding_spec, shard_lines,
         if row_idx < 3:  # 10 or (row_idx % 10 == 0 and row_idx < 100):
             logging.info(f"Row {row_idx:10} relation_field:   {relationship_column_name:15}  =>  {relation_field}")
 
-            logging.info(f"{relation_field} {type(relation_field)}")
+            logging.info(f"Relation field and type: {relation_field} {type(relation_field)}")
         
-        if isinstance(relation_field, int):
-            relation_list = [relation_field]
-        elif isinstance(relation_field, str):
-            if relation_field[0] != "['":
-                relation_field = "['" + relation_field
-            if relation_field[-1] != "']":
-                relation_field += "']"
-            relation_list = ast.literal_eval(relation_field)
-        else:
-            raise ValueError(f"{relation_field}: {type(relation_field)}")
-        assert isinstance(relation_list, list)
+        relation_list = coerce_relation_field(relation_field)
 
         for relation_val in relation_list:
             # This is a bit of a hack.
@@ -105,13 +119,7 @@ def process_row(row_idx, fields, header_reverse_map, sharding_spec, shard_lines,
             shard_num = sharding_spec.get_shard_number(relation_val)
             # minishard_num = sharding_spec.get_minishard_number(relation_val)
             shard_hex = get_shard_hex(shard_num, sharding_spec.shard_bits, force_str)
-
-            # if relation_val == 864691135568681196:
-            #     logging.info(f"AAA {relation_val} {sharding_spec.shard_bits} {shard_num} {shard_hex}")
-
-            # if row_idx < 10 or (row_idx % 10 == 0 and row_idx < 100):
-                # logging.info(f"One line relationship, column, relation val, shard, minishard, shardhex: {relationship:20} {relationship_column_name:20} {relation_val:>10} {shard_num:>2} {minishard_num:>3} {shard_hex:>2}")
-
+            
             fields_w_shard_hex = fields + [shard_hex]
             for i, field in enumerate(fields_w_shard_hex):
                 if ',' in field:
