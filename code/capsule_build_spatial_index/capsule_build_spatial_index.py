@@ -1050,7 +1050,7 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
         logging.info(f"Cell width (nm):          {cell_width_x_nm:13,.1f} {cell_width_y_nm:13,.1f} {cell_width_z_nm:13,.1f}")
         logging.info(f"Cell width (um):          {cell_width_x_um:13,.1f} {cell_width_y_um:13,.1f} {cell_width_z_um:13,.1f}")
         logging.info(f"Cell volume (um^3):       {cell_volume_um:13,.1f}")
-        logging.info(f"Max annotations per cell: {annotation_num_limit if annotation_num_limit is not None else 0:13,.1f}")
+        logging.info(f"Max annotations per cell: {annotation_num_limit if annotation_num_limit is not None else 'no indicated limit'}")
 
     grid_dim = 2 ** tree_level
     grid_shape = (grid_dim, grid_dim, grid_dim)

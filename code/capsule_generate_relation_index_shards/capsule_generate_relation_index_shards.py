@@ -243,7 +243,7 @@ def convert_relation_fields(row, data_relation_col_indices):
         for relation_val in relation_list:
             # See note in Relation index builder (search for 'enumerated property')
             if not isinstance(relation_val, int):
-                relation_val = convert_non_int_relation_via_enum_property(row_idx, relation_val, relationship_column_name)
+                relation_val = convert_non_int_relation_via_enum_property(relation_val, relationship_column_name)
             relation_fields[lbl].append(relation_val)
 
         # # The column might already be an int, not a string, so check for that first
