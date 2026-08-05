@@ -84,6 +84,7 @@ def parse_args(extra_args=[]):
     # add the corresponding parameters
     # parser.add_argument('--data_config_filename', dest='data_config_filename', default='data_config.json')
     parser.add_argument('--capsule', dest='capsule')
+    parser.add_argument('--config_override:', dest='config_override')
     parser.add_argument('--data_source_name', dest='data_source_name')
     for extra_arg in extra_args:
         parser.add_argument(f'--{extra_arg}', dest=extra_arg)
