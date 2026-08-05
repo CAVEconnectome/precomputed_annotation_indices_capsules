@@ -80,19 +80,32 @@ def add_timestamp_and_uri_to_config(config):
     config['NEUROGLANCER_URI'] = f"gs://{config['GCP_BUCKET']}/{config['GCP_RESULTS_BLOB_PATH']}/{timestamp}/"
     return config
 
+def deep_dictionary_override(default: dict, override: dict, parent_keys=[]) -> dict:
+    result = dict(default)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = deep_dictionary_override(result[key], value, parent_keys+[key])
+        else:
+            if key in default:
+                logging.info(f"Overriding default pipeline config '{".".join(parent_keys)}{"." if parent_keys else ""}{key}' = {default[key]} with {value}")
+            else:
+                logging.info(f"Adding pipeline config '{".".join(parent_keys)}{"." if parent_keys else ""}{key}' = {value}")
+            result[key] = value
+    return result
+
 if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.CRITICAL, format='%(message)s')
     logging.critical("_" * 100)
     logging.critical("GENERATE CONFIG")
+
+    data_loc = "../data/"
+    results_loc = "../results/"
 
     logging.basicConfig(stream=sys.stdout, level=get_logging_level_from_desc(config['LOGGING_LEVEL']), format=config['LOGGING_FORMAT'], force=True)
 
     analyze_memory_usage()
 
     args = parse_args()
-
-    data_loc = f"../data/"
-    results_loc = "../results/"
 
     logging.info(f"{data_loc} contents:")
     logging.info('  ' + '\n  '.join(sorted(os.listdir(data_loc))).strip() + '\n')
@@ -132,6 +145,10 @@ if __name__ == "__main__":
     config['DATA_CONFIG'] = data_config
     logging.info("")
 
+    # Enact any App Panel (command line argument) overrides.
+    config['DATA_CONFIG'] = deep_dictionary_override(config['DATA_CONFIG'], json.loads(args.config_override))
+    logging.info("")
+
     # Enact any overrides
     if 'pipeline_config' in config['DATA_CONFIG']:
         for k, v in config['DATA_CONFIG']['pipeline_config'].items():
@@ -139,6 +156,7 @@ if __name__ == "__main__":
                 continue
             logging.info(f"Overriding default pipeline config {k} = {config[k]} with {v}")
             config[k] = v
+        # config = deep_dictionary_override(config, config['DATA_CONFIG']['pipeline_config'])
     logging.info("")
 
     # In order to ensure there is no way to accidentally upload results to GCP, utterly break the GCP bucket designation
@@ -161,7 +179,9 @@ if __name__ == "__main__":
     if args.data_source_name is not None and \
         args.data_source_name.lower() not in ["", " ", "na", "none", "unspecified"]:
         logging.info(f"Using provided data source of '{args.data_source_name}'")
+        logging.info(f"DATA_CONFIG:data_sizes:\n  {config['DATA_CONFIG']['data_sizes']}")
         for data_source_name, one_data_size in config['DATA_CONFIG']['data_sizes'].items():
+            logging.info(f"  DATA_CONFIG:data_sizes entry: {data_source_name} {one_data_size}")
             if data_source_name == "docstring":
                 continue
             if data_source_name == args.data_source_name:  # config['DATA_SOURCE_NAME']:
@@ -169,14 +189,17 @@ if __name__ == "__main__":
                     # Splits are configured by split size
                     split_size = config['SPLIT_DESC']
                     num_splits = math.ceil(one_data_size[1] / split_size)
-                    logging.info(f"For the configured data size of {one_data_size[1]:,} and configured split_size of {config['SPLIT_DESC']:,}, num_splits has been calculated to be {num_splits}.")
+                    logging.info(f"  For the configured data size of {one_data_size[1]:,} and configured split_size of {config['SPLIT_DESC']:,}, num_splits has been calculated to be {num_splits}.")
                 else:
                     # Splits are configured by number of splits
                     num_splits = -config['SPLIT_DESC']
                     split_size = math.ceil(one_data_size[1] / num_splits)
-                    logging.info(f"For the configured data size of {one_data_size[1]:,} and configured num_splits of {-config['SPLIT_DESC']}, split_size has been calculated to be {split_size:,}.")
+                    logging.info(f"  For the configured data size of {one_data_size[1]:,} and configured num_splits of {-config['SPLIT_DESC']}, split_size has been calculated to be {split_size:,}.")
                 config['DATA_CONFIG']['data_size'] = [data_source_name] + one_data_size + [split_size, num_splits]
                 break
+            else:
+                logging.info("  Data source name mismatch. Moving on...")
+        logging.info("DATA_CONFIG:data_sizes iteration complete")
         if 'data_size' not in config['DATA_CONFIG']:
             raise ValueError("'data_size' not added to DATA_CONFIG. Are you sure the correct 'data_sizes' key was passed in?")
     

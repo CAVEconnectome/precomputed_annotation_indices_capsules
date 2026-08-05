@@ -926,7 +926,9 @@ def confirm_all_annotations_within_bounds(src_loc, annotations_file_or_rawtable,
         if annotations_file_or_rawtable.endswith(".csv"):
             # logging.info(f"  Confirming file: {annotations_file_or_rawtable}")
             lines = ram_data_pond.read_splitlines_from_disk_or_ram_data_pond(annotations_file_or_rawtable, None, None, src_loc==data_loc if not force_ram else False)
-            header_present = lines[0].startswith(columns[0 if id_column is not None else 1])
+            # header_present = lines[0].startswith(columns[0 if id_column is not None else 1])
+            cols = lines[0].split(',')
+            header_present = cols[0] == columns[0] or cols[1] == columns[1]  # Sometimes pandas leaves the first column in the header row
             annotations = RawTable(lines, columns if not header_present else None)
         elif annotations_file_or_rawtable.endswith(".parquet"):
             logging.info("confirm_all_annotations_within_bounds() Parquet in-bounds confirmation not implemented yet")
@@ -1050,7 +1052,7 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
         logging.info(f"Cell width (nm):          {cell_width_x_nm:13,.1f} {cell_width_y_nm:13,.1f} {cell_width_z_nm:13,.1f}")
         logging.info(f"Cell width (um):          {cell_width_x_um:13,.1f} {cell_width_y_um:13,.1f} {cell_width_z_um:13,.1f}")
         logging.info(f"Cell volume (um^3):       {cell_volume_um:13,.1f}")
-        logging.info(f"Max annotations per cell: {annotation_num_limit if annotation_num_limit is not None else 'no indicated limit'}")
+        logging.info(f"Max annotations per cell: {annotation_num_limit if annotation_num_limit is not None else 'no indicated limit (see DATA_CONFIG.spatial_limit.max_annotations_per_cubic_micron)'}")
 
     grid_dim = 2 ** tree_level
     grid_shape = (grid_dim, grid_dim, grid_dim)
@@ -1105,7 +1107,9 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
             
             # Check for the presence of a header line
             lines = ram_data_pond.read_nlines_from_disk_or_ram_data_pond(input_src, 1, src_loc==data_loc)
-            header_present = lines[0].startswith(columns[0 if id_column is not None else 1])
+            # header_present = lines[0].startswith(columns[0 if id_column is not None else 1])
+            cols = lines[0].split(',')
+            header_present = cols[0] == columns[0] or cols[1] == columns[1]  # Sometimes pandas leaves the first column in the header row
             logging.info(f"header_present: {header_present}")
 
         start_timeblock("read_input")
@@ -1135,7 +1139,9 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
                     end_timeblock("read_input")
                     # end_timeblock("process_one_treecell_input_file_or_dir()")
                     return None
-                header_present = lines[0].startswith(columns[0 if id_column is not None else 1])
+                # header_present = lines[0].startswith(columns[0 if id_column is not None else 1])
+                cols = lines[0].split(',')
+                header_present = cols[0] == columns[0] or cols[1] == columns[1]  # Sometimes pandas leaves the first column in the header row
                 if header_present:
                     logging.info("Header line will be removed")
                     lines = lines[1:]

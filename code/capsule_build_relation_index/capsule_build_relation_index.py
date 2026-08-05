@@ -231,7 +231,9 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
     if FILE_PROCESSING_METHOD == "dataframe":
         if file_format == "csv":
             lines = RAMDataPond.read_nlines_from_disk(input_file, 1)
-            header_present = lines[0].startswith(columns[0 if id_column is not None else 1])
+            # header_present = lines[0].startswith(columns[0 if id_column is not None else 1])
+            cols = lines[0].split(',')
+            header_present = cols[0] == columns[0] or cols[1] == columns[1]  # Sometimes pandas leaves the first column in the header row
             logging.info(f"header_present: {header_present}")
 
             if not header_present:
