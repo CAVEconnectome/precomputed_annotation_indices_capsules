@@ -11,12 +11,24 @@
 			"value_type": "string"
 		},
 		{
+			"id": "vjT4s4B8Nz3zgKxk",
+			"name": "config_override",
+			"param_name": "config_override",
+			"description": "Config values to override the config file",
+			"help_text": "A JSON blob that provides config parameters in the same format they appear in the config file, including any group hierarchies. They will override the corresponding values in the config file.",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "{}"
+		},
+		{
 			"id": "yBu130dHPz9ls8xz",
 			"name": "data_source_name",
 			"param_name": "data_source_name",
 			"description": "data_source_name",
+			"help_text": "data_source_name",
 			"type": "text",
-			"value_type": "string"
+			"value_type": "string",
+			"default_value": "unspecified"
 		}
 	]
 }
