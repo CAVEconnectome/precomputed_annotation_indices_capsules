@@ -81,7 +81,7 @@ def download_data_from_bucket():
             data_loc_contents = [v for v in data_loc_contents if "placeholder" not in v]
             logging.info(f"\n{data_loc} contents ({len(data_loc_contents)}) (first 30 shown):")
             logging.info('  ' + '\n  '.join(data_loc_contents[:30]).strip() + '\n')
-            
+
             timestamps.append(("download_files_from_external_storage", default_timer()))
         else:
             logging.info(f"\n{data_loc}PASS_DATA_BETWEEN_CAPSULES_METHOD indicates Code Ocean. Results won't be downloaded from external bucket.")
@@ -147,7 +147,7 @@ def extract_input_files_by_shardworker_before_shard_loop(ARCHIVE_MEMORY_STORE):
         else:
             logging.warning("\n\nWARNING! No input files after extraction. Theoretically, this could happen if there are no files for the associated shards, but it is generally unlikely to occur. For the time being, this process was abort so any potential error can be investigated, but this might turn out to be false alarm.\n\n")
             # raise RuntimeError("\n\nNo input files after extraction. Theoretically, this could happen if there are no files for the associated shards, but it is generally unlikely to occur. For the time being, this process was abort so any potential error can be investigated, but this might turn out to be false alarm.\n\n")
-    
+
     logging.info(f"found_shardworker_files: {found_shardworker_files}")
 
     return found_shardworker_files
@@ -203,7 +203,7 @@ def process_input_files(shard_hex, input_files, max_tree_level):
 
         if input_file_i < 5:
             logging.info(f"\nProcessing file (only first 5 of {len(input_files)} shown): {input_file}")
-            
+
         if False:  # DEBUG
             # Determining the line count requires scanning the file, which is otherwise unnecessary and potentially time-consuming.
             # Only do this for debugging, not production.
@@ -225,7 +225,7 @@ def process_input_files(shard_hex, input_files, max_tree_level):
 
         if input_file_i < 5:
             logging.info(f"  Num splits, Split id, Tree level: {num_splits}, {split_id}, {tree_level}")
-        
+
         if tree_level > max_tree_level_this_shard:
             logging.info(f"  New max tree level for this shard: {tree_level}")
             max_tree_level_this_shard = tree_level
@@ -324,7 +324,7 @@ def archive_merged_splits(shard_hex):
     #         else:
     #             assert False
     #     timestamps.append(("archive_merged_splits", default_timer()))
-    
+
     if not found_shardworker_files:
         logging.info(f"archive_merged_splits() found_shardworker_files is false. Proceeding to archive one shard.")
         if config['ARCHIVE_REGROUPED_OUTPUT']:
@@ -337,17 +337,17 @@ def archive_merged_splits(shard_hex):
                 with tarfile.open(f"{results_loc}regrouper__tree_cell_shards__shard-{shard_hex}{ext}", mode) as tar:
                     for results_loc_content in results_loc_contents:
                         if results_loc_content[-1] == '/':
-                            results_loc_content = treecell_dir[:-1]
+                            results_loc_content = results_loc_content[:-1]
                         # logging.info(f"  Adding treecell dir to tar: {results_loc_content}")
                         tar.add(results_loc_content, arcname=os.path.basename(results_loc_content))
                 if not PRESERVE_ALL_FIlES and not os.path.exists(f"{data_loc}DEBUG_FLAG.txt"):
                     for results_loc_content in results_loc_contents:
                         shutil.rmtree(results_loc_content)
             timestamps.append(("archive_merged_splits", default_timer()))
-            
+
 def process_shards(found_shardworker_files):
     max_tree_level = 0
-    
+
     for shard_hex in assigned_shards:
         logging.info("\n" + "*" * 100 + "\n")
         timestamps.append(("shard_loop_top", default_timer()))
@@ -380,7 +380,7 @@ def process_shards(found_shardworker_files):
 
         max_tree_level, subdirs_this_treelevel_shard = process_input_files(shard_hex, input_files, max_tree_level)
         timestamps.append(("regroup_shard_files", default_timer()))
-        
+
         # This next section incorporates the entire Combiner capsule into this capsule, thereby obviating the Combiner.
         # Once this section's behavior is validated, the Combiner capsule can be removed from the pipeline,
         # leaving the Conglomerator as the next capsule after this one.
@@ -389,7 +389,7 @@ def process_shards(found_shardworker_files):
         timestamps.append(("merge_splits", default_timer()))
 
         archive_merged_splits(shard_hex)
-    
+
     return max_tree_level
 
 def archive_results(found_shardworker_files):
@@ -406,7 +406,7 @@ def archive_results(found_shardworker_files):
                 with tarfile.open(f"{results_loc}regrouper__tree_cell_shards__shard_worker-{shard_worker_desc_file_hash}{ext}", mode) as tar:
                     for results_loc_content in results_loc_contents:
                         if results_loc_content[-1] == '/':
-                            results_loc_content = treecell_dir[:-1]
+                            results_loc_content = results_loc_content[:-1]
                         logging.info(f"  Adding treecell dir to tar: {results_loc_content}")
                         tar.add(results_loc_content, arcname=os.path.basename(results_loc_content))
                 if not PRESERVE_ALL_FIlES and not os.path.exists(f"{data_loc}DEBUG_FLAG.txt"):
@@ -458,12 +458,13 @@ if __name__ == "__main__":
     logging.critical("_" * 100)
     logging.critical("REGROUP SPATIAL INDEX OCT TREE SPLITS")
 
+    # Make sure this subpipeline's config is loaded last so it can override any other config values
     config = read_config(["id", "relation", "spatial"])
     logging.basicConfig(level=get_logging_level_from_desc(config['LOGGING_LEVEL']), handlers=[
             logging.StreamHandler(sys.stdout),
             logging.FileHandler(f"{results_loc}log_regroup_spatial_oct_tree_worker_outputs_{logging_uid}.log", mode="a")
         ], format=config['LOGGING_FORMAT'], force=True)
-    
+
     timestamps = []
     timestamps.append(("start", default_timer()))
 
@@ -472,7 +473,7 @@ if __name__ == "__main__":
         data_loc_contents = [v for v in data_loc_contents if "placeholder" not in v]
         logging.info(f"{data_loc} contents ({len(data_loc_contents)}) (first 30 shown):")
         logging.info('  ' + '\n  '.join(data_loc_contents[:30]).strip() + '\n')
-        
+
         logging.info(f"{data_loc} subcontents ({len(list(glob.glob(f"{data_loc}*/*")))}) (first 5 shown):\n  {'\n  '.join(sorted(list(glob.glob(f"{data_loc}*/*"))[:5])).strip()}")
         logging.info("\n")
 
@@ -493,7 +494,7 @@ if __name__ == "__main__":
         logging.info("\n")
 
         shard_worker_desc_file_hash, assigned_shards = read_shardworker_file()
-    
+
         # Copy upstream logs from input to output
         if "0" in assigned_shards:  # To avoid CodeOcean name collisions, only do this from one capsule
             logs = sorted(list(glob.glob(f"{data_loc}log*.log")))
@@ -502,36 +503,36 @@ if __name__ == "__main__":
                 # shutil.copy(log, f"{results_loc}logs/{os.path.basename(log)}")
                 logging.info(f"Copying log from {data_loc} to {results_loc}: {log}")
                 shutil.copy(log, f"{results_loc}{os.path.basename(log)}")
-        
+
         timestamps.append(("read_shardworker_file", default_timer()))
-    
+
         if config['ARCHIVE_OUTPUT']:
             input_files = list(glob.glob(f"{data_loc}split-*/annotations_one_treecell*/*.csv"))
             logging.info(f"Input annotations_one_treecell directory files (SHOULD BE EMPTY): {input_files}")
             if input_files:
                 logging.error("\nERROR! There should be no completed tree cell directories. There should only .tar.gz files!\n")
-        
+
         # Prior to the external bucket method, the incoming files from the tree building capsules would be grouped into split-specific subdirectories. The external bucket method doesn't however. The files all live in a single directory. One solution would be to adapt the newer external bucket method to maintain the split subdirectory organization, but it isn't really necessary. So instead, let's move all files, regardless of method out of any split subdirectories.
         split_subdir_files = glob.glob(f"{data_loc}split-*/*")
         for split_subdir_file in split_subdir_files:
             shutil.move(split_subdir_file, data_loc)
-        
+
         timestamps.append(("move_files_out_of_split_subdirs", default_timer()))
-        
+
         download_data_from_bucket()
-        
+
         # Keep this value aligned with the previous capsule.
         # TODO: put these in pipeline-level config parameters.
         ARCHIVE_MEMORY_STORE = True  # Pack RAM data pond into a tar buffer and write a single tar file to disk. Else, write each RAM data pond file to a separate file on disk (which could be 1000s and impede CodeOcean performance).
 
         extract_input_files_before_shard_loop(ARCHIVE_MEMORY_STORE)
         timestamps.append(("extract_input_files_before_shard_loop", default_timer()))
-        
+
         found_shardworker_files = extract_input_files_by_shardworker_before_shard_loop(ARCHIVE_MEMORY_STORE)
         timestamps.append(("extract_input_files_by_shardworker_before_shard_loop", default_timer()))
-            
+
         max_tree_level = process_shards(found_shardworker_files)
-        
+
         # We don't need to archive the results or upload them to a bucket if we are running the conglomerator right here in this capsule momentarily (below).
         # archive_results(found_shardworker_files)
         # upload_results_to_bucket()
@@ -543,15 +544,15 @@ if __name__ == "__main__":
             shutil.move(results_loc_content, f"{data_loc}{file_name}")
 
         logging.info("\n" + "* " * 50 + "\n")
-    
+
         logging.info(f"Max tree level all shards: {max_tree_level}")
         with open(f"{results_loc}max_tree_level-{max_tree_level:02}__shard_worker-{shard_worker_desc_file_hash}.txt", 'w') as f:
             f.write(f"{'-'.join(sorted(assigned_shards))}\n")
             f.write(f"{max_tree_level}\n")
-    
+
     finalize_results(results_loc)
     timestamps.append(("finalize_results", default_timer()))
-    
+
     logging.error("\nElapsed timestamps:")
     accum_elapsed_times = Counter()
     for ti, time in enumerate(timestamps):
@@ -559,7 +560,7 @@ if __name__ == "__main__":
             elap_t = time[1] - timestamps[ti-1][1]
             accum_elapsed_times[time[0]] += elap_t
             logging.error(f"  {seconds_to_hms(elap_t)} {time[0]}")
-        
+
     logging.error("Accumulated elapsed timestamps:")
     for label, elap_t in accum_elapsed_times.items():
         logging.error(f"  {seconds_to_hms(elap_t)} {label}")

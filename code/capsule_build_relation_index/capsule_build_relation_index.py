@@ -48,7 +48,7 @@ def get_shard_hex(shard_number: int, shard_bits: int, force_str: bool) -> str:
 
 def convert_non_int_relation_via_enum_property(row_idx, relation_val, relationship_column_name):
     if row_idx == 0:
-        logging.info(f"Relation column {relationship} doesn't contain 'int' data. Looking in the data config for a corresponding enumerated property description.")
+        logging.info(f"Relation column {relationship_column_name} doesn't contain 'int' data. Looking in the data config for a corresponding enumerated property description.")
     found_it = False
     for prop_lbl, prop_info in config['DATA_CONFIG']['properties'].items():
         if prop_info['id'] == relationship_column_name:
@@ -68,7 +68,7 @@ def convert_non_int_relation_via_enum_property(row_idx, relation_val, relationsh
                 relation_val = enum_value
                 found_it = True
     if not found_it:
-        raise TypeError(f"Relation column '{relationship}' does not contain 'int' data and has no associated enumerated property description from which to derive an 'int' value.")
+        raise TypeError(f"Relation column '{relationship_column_name}' does not contain 'int' data and has no associated enumerated property description from which to derive an 'int' value.")
     return relation_val
 
 def coerce_relation_field(relation_field):
@@ -105,7 +105,7 @@ def process_row(row_idx, fields, header_reverse_map, sharding_spec, shard_lines,
             logging.info(f"Row {row_idx:10} relation_field:   {relationship_column_name:15}  =>  {relation_field}")
 
             logging.info(f"Relation field and type: {relation_field} {type(relation_field)}")
-        
+
         relation_list = coerce_relation_field(relation_field)
 
         for relation_val in relation_list:
@@ -119,7 +119,7 @@ def process_row(row_idx, fields, header_reverse_map, sharding_spec, shard_lines,
             shard_num = sharding_spec.get_shard_number(relation_val)
             # minishard_num = sharding_spec.get_minishard_number(relation_val)
             shard_hex = get_shard_hex(shard_num, sharding_spec.shard_bits, force_str)
-            
+
             fields_w_shard_hex = fields + [shard_hex]
             for i, field in enumerate(fields_w_shard_hex):
                 if ',' in field:
@@ -174,7 +174,7 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
     logging.info(f"file_format: {file_format}")
     logging.info(f"Top-level split input file: {input_file}")
     logging.info(f"Top-level split input file size: {file_size_bytes} bytes")
-    
+
     input_filename = os.path.basename(input_file)
     if not split_id:
         pcs = input_filename[:input_filename.rindex('.')].split("__")
@@ -185,6 +185,8 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
                 split_id, num_splits = (int(v) for v in splitnm.split('@'))
                 break
         logging.info(f"Num splits, Split id: {num_splits}, {split_id}")
+    if not split_id:
+        raise ValueError("Input split file does not contain a split id")
     logging.info(f"Split id: {split_id}")
 
     # Debugging: confirm that the header row is or is not present based on the script's circumstances.
@@ -198,9 +200,9 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
                     logging.info(f"  Line {i+1:>2}: " + f.readline().strip())
         except Exception as e:
             logging.info(e)
-    
+
     sharding_spec = anno.ShardingSpec(hash=config['RELATION_SHARDING_HASH'], preshift_bits=config['RELATION_PRESHIFT_BITS'], shard_bits=config['RELATION_SHARDING_BITS'], minishard_bits=config['RELATION_MINISHARDING_BITS'])
-    
+
     header = None
 
     if 'id_src' in config['DATA_CONFIG']:
@@ -208,22 +210,22 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
         logging.info(f"id_src: {id_src}")
         raise RuntimeError("id_src support (Wan-Qing's swc data) is not implemented yet")
     assert 'id_column' in config['DATA_CONFIG']
-    
+
     columns = config['DATA_CONFIG']['columns']
     id_column = config['DATA_CONFIG']['id_column']
     # logging.info(f"id_column: {id_column}")
     if id_column is None:
         logging.info(f"id_column is NULL, so it will be inferred from the split id and row idx, and inserted into the corresponding id column: {columns[0]}.")
-    
+
     split_size = config['DATA_CONFIG']['data_size'][3]
     split_id_start = (split_id - 1) * split_size + 1
     logging.info(f"split_id_start: {split_id_start} (only used if config id_column is null)")
 
     header_reverse_map = {col: i for i, col in enumerate(config['DATA_CONFIG']['columns'])}
     shard_lines = defaultdict(lambda: defaultdict(list))  # Dict of relation names to dict of shards to list of lines (rows)
-    
+
     line_count = 0
-    
+
     timestamps.append(("process_input_file() init", default_timer()))
 
     FILE_PROCESSING_METHOD = "dataframe"  # dataframe or text
@@ -244,9 +246,9 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
                 # logging.info(f"Inferred header: {df.columns}")
         elif file_format == "parquet":
             df = pd.read_parquet(input_file, engine=config['PARQUET_ENGINE'])
-        
+
         timestamps.append(("process_input_file() read input", default_timer()))
-        
+
         logging.info(f"\nNum lines (rows) in split: {len(df)}")
 
         pd.set_option('display.max_columns', None)
@@ -288,22 +290,22 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
                     header_reverse_map = {col: i for i, col in enumerate(data_header)}
                 else:
                     process_text_line(line_count, line, header_reverse_map, sharding_spec, shard_lines, True)
-    
+
             line_count += 1
-        
+
     header = config['DATA_CONFIG']['columns'] + ['shard_hex']
 
     logging.info(f"\nNum lines (rows) in split: {line_count}")
 
     logging.info(f"shard_lines keys: {shard_lines.keys()}")
-    
+
     shard_hexes = set()
     for relationship in shard_lines:
         relationship_key = relationship_keys[relationship]
         logging.info(f"\nGenerating output for relation    {relationship}    {relationship_key}")
 
         logging.info(f"shard_lines[{relationship}] keys: {shard_lines[relationship].keys()}")
-        
+
         total_shard_lines = 0
         for shi, (shard_hex, lines) in enumerate(shard_lines[relationship].items()):
             # Strip off shard_hex prefix that forced to string to preserve leading 0s
@@ -311,17 +313,17 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
                 shard_hex = shard_hex[1:-1]
             elif shard_hex[0] == '_':
                 shard_hex = shard_hex[1:]
-            
+
             shard_hexes.add(shard_hex)
             shard_worker_desc_file_hash, shard_worker_desc = shard_worker_lookup[shard_hex]
 
             subdir = f"{results_loc}shard_worker-{shard_worker_desc_file_hash}/split-{split_id:03}@{num_splits}__{relationship_key}/"
             os.makedirs(subdir, exist_ok=True)
-            
+
             total_shard_lines += len(lines)
             if shi < 5:
                 logging.info(f"  Shard {shard_hex} ({shi+1} of {len(shard_lines[relationship].keys())}) num rows (first 5 shown): {len(lines):>11,}")
-            
+
             # dir_ = f"{results_loc}"#worker_{shard_hex}/"
             # os.makedirs(dir_, exist_ok=True)
             file_subdir_path = f"{subdir}{relationship_key}__shard-{shard_hex}__{input_filename}"
@@ -334,7 +336,7 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
                 f.writelines(lines)
         logging.info(f"  Total shard lines accumulated across all shards: {total_shard_lines:,}")
     logging.info("")
-    
+
     return split_id, num_splits, sorted(list(shard_hexes)), header
 
 def process_test_file():
@@ -383,7 +385,7 @@ def process_test_file():
         split_id, num_splits, shard_hexes, header = process_input_file(split_filepath, num_splits, split_id)
 
         return split_id, num_splits, shard_hexes, header
-    
+
     return None, None, None, None
 
 def process_input_dir(input_dir=None, num_splits=None, split_id=None):
@@ -401,13 +403,13 @@ def process_input_dir(input_dir=None, num_splits=None, split_id=None):
                 logging.info(f"Found input file for data_src '{data_src}' at {data_src_files[0]}")
                 assert os.path.isdir(data_src_files[0])
                 input_dirs.add(data_src_files[0])
-            
+
         # We should receive precisely one input
         if len(input_dirs) != 1:
             raise RuntimeError(f"Expected exactly 1 input dir: {input_dirs}")
-        
+
         input_dir = input_dirs.pop()  # Safe since we know there is precisely one item in the set
-    
+
     logging.info(f"Top-level split input dir: {input_dir}")
 
     input_dirname = os.path.basename(input_dir)
@@ -452,7 +454,7 @@ def process_input_dir(input_dir=None, num_splits=None, split_id=None):
             input_filename2 = f"split-{split_id:03}@{num_splits}__shard-{shard_hex_no_quotes}__{input_filename}"
             logging.info(f"File id, shard num, shard hex, shard hex w/o leading '_'s, shard worker: {input_file_id} {shard_num} {shard_hex} {shard_hex_no_quotes} {shard_worker_desc}")
             logging.info(f"Moving and renaming file: {input_filename} -> {subdir}{input_filename2}")
-            
+
             # Copy the file for all but the last relation. The move it for the last one so it doesn't remain in the original location.
             if rki < len(relationship_keys) - 1:
                 shutil.copy(input_file, f"{subdir}{input_filename2}")
@@ -466,9 +468,9 @@ def process_input_dir(input_dir=None, num_splits=None, split_id=None):
     logging.info(f"Input files after moving and renaming (should be empty):\n  {'\n  '.join(files)}")
     files = sorted(list(glob.glob(f"{results_loc}shard_worker-*/*")))
     logging.info(f"Shard worker files after moving and renaming:\n  {'\n  '.join(files)}")
-    
+
     shard_hexes = sorted(list(shard_hexes))
-    
+
     return split_id, num_splits, shard_hexes, config['DATA_CONFIG']['columns']
 
 def archive_results(split_id, num_splits, header):
@@ -484,8 +486,8 @@ def archive_results(split_id, num_splits, header):
                     ext, mode = (".tar.gz", "w:gz") if config['COMPRESS_ARCHIVE'] else (".tar", "w")
                     with tarfile.open(f"{results_loc}split-{split_id:03}@{num_splits}{ext}", mode) as tar:
                         for output_dir in output_dirs:
-                            # logging.info(f"  Adding split shard file to tar: {output_file}")
-                            tar.add(output_dir, arcname=os.path.basename(output_file))
+                            # logging.info(f"  Adding split shard file to tar: {output_dir}")
+                            tar.add(output_dir, arcname=os.path.basename(output_dir))
             elif "parquet" in config['ARCHIVE_FORMAT']:
                     raise NotImplementedError("ARCHIVE_FORMAT 'parquet' without ARCHIVE_WITH_SHARD_GROUPING not yet implemented")
             elif config['ARCHIVE_FORMAT'] == "custom":
@@ -525,7 +527,7 @@ def archive_results(split_id, num_splits, header):
             for shard_worker_desc_i, (shard_worker_desc_file_hash, shard_worker_desc) in enumerate(shard_worker_descs):
                 shard_worker_desc_str = '_'.join(shard_worker_desc)  # Unused now
                 logging.info(f"Archiving shard group: {shard_worker_desc_str}")
-                
+
                 if config['ARCHIVE_FORMAT'] == "tar":
                     ext, mode = (".tar.gz", "w:gz") if config['COMPRESS_ARCHIVE'] else (".tar", "w")
                     with tarfile.open(f"{results_loc}split-{split_id:03}@{num_splits}__shard_worker-{shard_worker_desc_file_hash}{ext}", mode) as tar:
@@ -546,7 +548,7 @@ def archive_results(split_id, num_splits, header):
                                 for output_file in output_files:
                                     logging.info(f"  Adding split shard file to tar: {output_file}")
                                     tar.add(output_file, arcname=os.path.basename(output_file))
-                                
+
                                 for output_file in output_files:
                                     os.remove(output_file)
                 elif "parquet" in config['ARCHIVE_FORMAT']:
@@ -561,7 +563,7 @@ def archive_results(split_id, num_splits, header):
                                 #     output_parquet_filename = os.path.basename(output_file).replace(".csv", ".parquet").replace("__shard-", f"__split-{split_id:03}@{num_splits}__shard-")
                                 #     df = pd.read_csv(output_file, index_col=False)
                                 #     df.to_parquet(f"{results_loc}{output_parquet_filename}", engine=config['PARQUET_ENGINE'])
-                                
+
                                 # Produce one parquet file per shard worker (This is better. It groups all shards per shard worker into a single file.)
                                 for output_file in output_files:
                                     with open(output_file) as f:
@@ -572,7 +574,7 @@ def archive_results(split_id, num_splits, header):
                                     # Debug, check index and column alignment
                                     pd.set_option('display.max_columns', None)
                                     # logging.info(f"Single archive read back:\n{df}")
-                                    
+
                                     if merged_df is None:
                                         if shi <= 1:
                                             logging.info(f"Initializing merged shards file from first shard: {shard_hex}")
@@ -584,7 +586,7 @@ def archive_results(split_id, num_splits, header):
 
                                 for output_file in output_files:
                                     os.remove(output_file)
-                        
+
                         if merged_df is not None:
                             logging.info(f"merged_df['shard_hex'] type: {merged_df.dtypes['shard_hex']}")
                             merged_df['shard_hex'] = merged_df['shard_hex'].astype(str)
@@ -601,15 +603,15 @@ def archive_results(split_id, num_splits, header):
                             output_files = list(glob.glob(f"{results_loc}shard_worker-{shard_worker_desc_file_hash}/split-*__*/*__shard-{shard_hex}__*"))
                             if output_files:
                                 # logging.info(f"Archiving {len(output_files)} output files for shard {shard_hex}")
-                            
+
                                 for output_file in output_files:
                                     with open(output_file, 'r') as fin:
                                         file_contents = fin.read()
                                     RAMDataPond.archive_str_data(output_file, file_contents, f"{results_loc}shard_worker-{shard_worker_desc_file_hash}/", fout)
-                                
+
                                 for output_file in output_files:
                                     os.remove(output_file)
-                
+
         output_dirs = sorted(list(glob.glob(f"{results_loc}shard_worker-*")))
         for output_dir in output_dirs:
             shutil.rmtree(output_dir)
@@ -656,12 +658,13 @@ if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.CRITICAL, format='%(message)s')
     logging.critical("_" * 100)
     logging.critical("BUILD RELATION INDEX")
-    
+
     analyze_memory_usage()
 
     data_loc = "../data/"
     results_loc = "../results/"
 
+    # Make sure this subpipeline's config is loaded last so it can override any other config values
     config = read_config(["id", "spatial", "relation"])
     logging.basicConfig(stream=sys.stdout, level=get_logging_level_from_desc(config['LOGGING_LEVEL']), format=config['LOGGING_FORMAT'], force=True)
 
@@ -671,7 +674,7 @@ if __name__ == "__main__":
     logging.getLogger('s3transfer').setLevel(logging.INFO)
     logging.getLogger('aws-cli').setLevel(logging.INFO)
     logging.getLogger('cloudfiles').setLevel(logging.INFO)
-    
+
     logging.getLogger('simple_writer_no_spatial_indexing').setLevel(
         get_logging_level_from_desc(config['PRECOMPUTED_FILE_WRITER_LOGGING_LEVEL']))
     logging.getLogger('sharding').setLevel(
@@ -680,7 +683,7 @@ if __name__ == "__main__":
         get_logging_level_from_desc(config['PRECOMPUTED_FILE_WRITER_LOGGING_LEVEL']))
 
     missing_enum_labels = set()
-    
+
     if config['RELATION_INDEX_ENABLED']:
         timestamps = []
         timestamps.append(("start", default_timer()))
@@ -707,10 +710,13 @@ if __name__ == "__main__":
         logging.info("\n")
 
         timestamps.append(("read shard worker descriptions", default_timer()))
-        
+
         relationship_keys = {}
         for relationship in config['DATA_CONFIG']['relations']:
-            relationship_keys[relationship] = convert_relation_key(relationship)
+            relationship_key = convert_relation_key(relationship)
+            if relationship_key in relationship_keys:
+                raise ValueError(f"Multiple relations are configured to map to the same relation key: {relationship_key}")
+            relationship_keys[relationship] = relationship_key
         logging.info(f"Relationship keys: {relationship_keys}")
 
         timestamps.append(("read relationships", default_timer()))
@@ -750,17 +756,17 @@ if __name__ == "__main__":
                 elap_t = time[1] - timestamps[ti-1][1]
                 accum_elapsed_times[time[0]] += elap_t
                 # logging.error(f"  {seconds_to_hms(elap_t)} {time[0]}")
-            
+
         logging.error("Accumulated elapsed timestamps:")
         for label, elap_t in accum_elapsed_times.items():
             logging.error(f"  {seconds_to_hms(elap_t)} {label}")
-    
+
     if missing_enum_labels:
         logging.error(f"Missing enum labels: {missing_enum_labels}")
         raise ValueError(f"Missing enum labels: {missing_enum_labels}")
-    
+
     finalize_results(results_loc)
-    
+
     analyze_memory_usage()
 
 logging.info("\nDone")

@@ -13,7 +13,7 @@ relation_config = {
     # "LOGGING_FORMAT": "%(levelname)s: %(message)s",
 
     "PRECOMPUTED_FILE_WRITER_LOGGING_LEVEL": "info",
-    
+
     "RELATION_INDEX_ENABLED": True,
 
     "RELATION_SHARDING": True,
@@ -28,7 +28,7 @@ relation_config = {
 
     "ARCHIVE_FORMAT": "parquet_pyarrow",  # None, "", "tar", "parquet_pyarrow", "parquet_fastparquet", "custom" -- Custom method is provided & documented in ram_data_pond.py
     "COMPRESS_ARCHIVE": False,
- 
+
     # Shard grouping separates the output into multiple archives by shard or shard worker.
     # This saves the next capsule the effort of dearchiving data for shards it won't process.
     # However, doing so multiplies the number of archive files, which impedes Code Ocean intra-capsule performance.
@@ -41,9 +41,6 @@ relation_config = {
     # Note that this setting probably prefers that ARCHIVE_WITH_SHARD_GROUPING be True.
     # "PASS_DATA_BETWEEN_CAPSULES_OUTSIDE_CODE_OCEAN": False,
     "PASS_DATA_BETWEEN_CAPSULES_METHOD": "aws",  # "internal", "gcp", "aws"
- 
-    # Assign this to some arbitary random number to force Code Ocean to reprocess the file instead of using a previously cached run
-    "FORCE_NO_CACHE": 345434,
 }
 
 if __name__ == "__main__":
@@ -54,6 +51,7 @@ if __name__ == "__main__":
     data_loc = "../data/"
     results_loc = "../results/"
 
+    # Make sure this subpipeline's config is loaded last so it can override any other config values
     config = read_config(["id", "spatial", "relation"])
 
     # Enact any overrides

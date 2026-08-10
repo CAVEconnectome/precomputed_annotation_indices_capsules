@@ -195,7 +195,7 @@ def reorganize_spatial_sharded_index():
         if tree_level > max_tree_level:
             max_tree_level = tree_level
 
-        tree_level_subdirs = list(glob.glob("{tree_subdir}/spatial{tree_level}"))
+        tree_level_subdirs = list(glob.glob(f"{tree_subdir}/spatial{tree_level}"))
         if tree_level_subdirs:
             os.makedirs(f"{results_loc}spatial_index_sharded/spatial{tree_level}/", exist_ok=True)
             shutil.copy(f"{tree_subdir}/spatial{tree_level}/{shard}.shard", f"{results_loc}spatial_index_sharded/spatial{tree_level}/{shard}.shard")

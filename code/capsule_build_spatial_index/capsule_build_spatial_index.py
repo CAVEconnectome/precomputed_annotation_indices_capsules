@@ -49,7 +49,7 @@ class Annotation:
             logging.error(f"ERROR!  Annotation is about to receive a second appended treecell_index:   {last_field}   {treecell_index}")
             logging.info(self.raw_data)
             assert False
-        
+
         if format == "csv":
             self.raw_data = self.raw_data.strip() + f",{treecell_index}"
         else:
@@ -60,7 +60,7 @@ class PointAnnotation(Annotation):
     def __init__(self, id_, position, raw_data):
         super().__init__(id_, raw_data)
         self.position = position
-    
+
     def copy(self):
         return PointAnnotation(self.id_, self.position, self.raw_data)
 
@@ -73,7 +73,7 @@ class LineAnnotation(Annotation):
         super().__init__(id_, raw_data)
         self.start = start
         self.end = end
-    
+
     def copy(self):
         return LineAnnotation(self.id_, self.start, self.end, self.raw_data)
 
@@ -85,7 +85,7 @@ class PolyLineAnnotation(Annotation):
     def __init__(self, id_, points, raw_data):
         super().__init__(id_, raw_data)
         self.points = points
-    
+
     def copy(self):
         new_points = [v for v in self.points]
         return PolyLineAnnotation(self.id_, new_points, self.raw_data)
@@ -114,12 +114,12 @@ def get_shard_hex(tree_level, tree_level_cell_id, verbose=False):
     shard_hex = sharding.get_shard_hex(shard_num, config['TREE_LEVEL_SHARDING_SPECS'][tree_level]['shard_bits'])
     if verbose:
         logging.info(f"get_shard_hex({tree_level}, {tree_level_cell_id}) -> mc {morton_code}, shard_num {shard_num}, shard_hex {shard_hex}")
-    
+
     if verbose:
         logging.info(f"get_shard_hex(): Tree level, cell id, morton code, shard bits, shard range, shard num, shard hex: {tree_level} {tree_level_cell_id} {morton_code:>2} {config['TREE_LEVEL_SHARDING_SPECS'][tree_level]['shard_bits']} {2**config['TREE_LEVEL_SHARDING_SPECS'][tree_level]['shard_bits']} {shard_num} {shard_hex}")
 
         logging.info(f"get_shard_hex(): {tree_level:>10} [{tree_level_cell_id[0]:3}, {tree_level_cell_id[1]:3}, {tree_level_cell_id[2]:3}] {morton_code:>12} {config['TREE_LEVEL_SHARDING_SPECS'][tree_level]['shard_bits']:>11} {2**config['TREE_LEVEL_SHARDING_SPECS'][tree_level]['shard_bits']:>12} {shard_num:>10} {shard_hex:>10}")
-    
+
     return shard_hex
 
 def determine_capsule_tree_level(src_loc):
@@ -129,7 +129,7 @@ def determine_capsule_tree_level(src_loc):
     If there are any subtree directories, they determine the capsule's working tree level.
     Otherwise, this capsule is only passing completed tree cells through and there is no meaningful capsule tree level.
     """
-    
+
     start_timeblock("determine_capsule_tree_level()")
 
     tree_level = None
@@ -211,7 +211,7 @@ def determine_capsule_tree_level(src_loc):
 
     logging.info(f"Determined tree level: {tree_level}\n")
     assert tree_level is not None
-    
+
     end_timeblock("determine_capsule_tree_level()")
 
     return tree_level
@@ -221,7 +221,7 @@ def determine_subtree_bounds(cell_bounds_low, cell_bounds_mid, cell_bounds_high,
     See note in determine_pt_subtreecell() about X,Y,Z bit order.
     '''
     start_timeblock("determine_subtree_bounds()")
-    
+
     x_bounds = [cell_bounds_mid[0], cell_bounds_high[0]] if child_cell_octant[0] == 1 else [cell_bounds_low[0], cell_bounds_mid[0]]
     y_bounds = [cell_bounds_mid[1], cell_bounds_high[1]] if child_cell_octant[1] == 1 else [cell_bounds_low[1], cell_bounds_mid[1]]
     z_bounds = [cell_bounds_mid[2], cell_bounds_high[2]] if child_cell_octant[2] == 1 else [cell_bounds_low[2], cell_bounds_mid[2]]
@@ -270,14 +270,14 @@ def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotati
     So, this function now offers two options: DataFrames or lists.
     '''
     start_timeblock("select_holdout_rows_and_subdivide_subtree_rows()")
-    
+
     # verbose = False
     if verbose:
         logging.info("\n\nBEWARE! verbose is True in select_holdout_rows_and_subdivide_subtree_rows()\n\n")
 
     # The concat_method is partially independent of whether the 'annotations' parameter is a DataFrame or a RAM file from the RAM data pond.
     # If annotations is a DataFrame, both concat_method 'dataframe' and 'list' are supported.
-    # But if annotations is a RAM file, then only concat_method 'list' is supported. 
+    # But if annotations is a RAM file, then only concat_method 'list' is supported.
     concat_method = "list"
     if concat_method == "dataframe":
         assert False, "concat_method dataframe no longer supported"
@@ -303,21 +303,21 @@ def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotati
                 [[], []],
             ],
         ]
-    
+
     if verbose:
         logging.info(f"\nHeld row count:            {config['MAX_DATA_ROWS_PER_TREE_CELL'] // num_splits:>11,} max-rows-per-tree-cell-split ({config['MAX_DATA_ROWS_PER_TREE_CELL']} max-rows-per-tree-cell // {num_splits} splits)")
-    
+
     start_timeblock("extract_sample")
 
     # Determine how many rows to hold in this tree cell.
     # Then select a random sample of that many rows from the data.
     # Then remove the selected rows from the working set; the working set will be sent down to the next tree level.
     max_num_rows_to_hold = math.floor(config['MAX_DATA_ROWS_PER_TREE_CELL'] / (num_splits * num_subsplits))
-    
+
     # PANDAS_SAMPLE_RANDOM_STATE = 0
     # logging.critical("WARNING!   " * 5)
     # logging.critical(f"PANDAS_SAMPLE_RANDOM_STATE set to hard-coded {PANDAS_SAMPLE_RANDOM_STATE}")
-    
+
     if isinstance(annotations, pd.DataFrame):
         assert False
         annos_this_level = annotations.sample(n=min(max_num_rows_to_hold, len(annotations)))  #, random_state=PANDAS_SAMPLE_RANDOM_STATE)
@@ -340,11 +340,11 @@ def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotati
         logging.info(f"max_num_rows_to_hold:      {max_num_rows_to_hold:>11,}")
         logging.info(f"annos_this_level len:      {len(annos_this_level):>11,}")
         logging.info(f"annotations_passed_on len: {len(annotations_passed_on):>11,}")
-    
+
     end_start_timeblocks("extract_sample", "subdivide_subtree")
 
     num_cell_dups, num_cell_nondups = 0, 0
-    
+
     # For the rows intended to send down the tree for further processing,
     # determine which of the eight children will receive each row and group them accordingly.
 
@@ -360,7 +360,7 @@ def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotati
 
             # Furthermore, if the two locations fall into different tree cells, we must also pass the annotation down to any intervening cells between the end points.
             # This situation can get almost arbitrarily complicated from a geometric perspective, but most cases will be fairly simple. Consider the following scenarios:
-            
+
             # Add the annotation to all cells between the endpoints. This will almost never happen, with most annotations residing in a single cell, as shown here:
             # +--------+
             # |  END   |
@@ -400,7 +400,7 @@ def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotati
             # +--------+--------+
             # A smoothly integrated solution involving more "complex math" (ooga booga) would have to be applied to catch these more problematic cases.
             # It's worth asking how important this is.
-            
+
             debug = False  # row_idx < 1
 
             spatial_pt_columns = config['DATA_CONFIG']['spatial_pt_columns']
@@ -463,16 +463,16 @@ def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotati
             row = next(reader)
 
             debug = False  # row_idx < 1
-            
+
             end_start_timeblocks("split_line", "get_row_field_vals")
-            
+
             pt_positions = {
                 pt_desc: [float(row[pt_x_col_idx]), float(row[pt_y_col_idx]), float(row[pt_z_col_idx])] \
                     for pt_desc, [pt_x_col_idx, pt_y_col_idx, pt_z_col_idx] in spatial_pt_col_idxs.items()
             }
-            
+
             end_start_timeblocks("get_row_field_vals", "check_bounds")
-            
+
             # this_anno_pre_pt_in_bounds = True
             # this_anno_post_pt_in_bounds = True
             this_anno_pts_in_bounds = {pt_desc: True for pt_desc in pt_positions}
@@ -500,7 +500,7 @@ def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotati
             #     this_anno_post_pt_in_bounds = False
                 # The following warning message is too numerous, so just count the occurrences and report them after the loop
                 # logging.warning(f"WARNING! Row {row_idx}. Post point resides outside tree cell bounds:\n  [{post_pt_pos_x}, {post_pt_pos_y}, {post_pt_pos_z}] outside\n  {cell_bounds_low}, {cell_bounds_high}\n  (this is okay if the opposing point is inside the bounds)")
-            
+
             num_pts_in_bounds = sum([1 if v else 0 for v in this_anno_pts_in_bounds.values()])
             if num_pts_in_bounds == 0:
                 logging.error(f"ERROR! (BB shrassr()) Row {row_idx}. All annotation spatial indexing points reside outside tree cell bounds: {cell_bounds_low}, {cell_bounds_high}")
@@ -509,10 +509,10 @@ def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotati
             # if not this_anno_pre_pt_in_bounds and not this_anno_post_pt_in_bounds:
             #     logging.error(f"ERROR! (BB shrassr()) Row {row_idx}. Both Pre and Post points reside outside tree cell bounds:\n  [{pre_pt_pos_x}, {pre_pt_pos_y}, {pre_pt_pos_z}] and [{post_pt_pos_x}, {post_pt_pos_y}, {post_pt_pos_z}] outside\n  {cell_bounds_low}, {cell_bounds_high}")
             #     raise RuntimeError(f"BB shrassr()")
-            
+
             # end_timeblock("check_bounds")
             end_start_timeblocks("check_bounds", "process_pre_point")
-            
+
             this_anno_pts_propagated_to_child = {pt_desc: False for pt_desc in pt_positions}
             tree_level_child_cell_local_ids = set()
 
@@ -547,9 +547,9 @@ def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotati
                             #     [pre_pt_pos_x, pre_pt_pos_y, pre_pt_pos_z],
                             #     f"{id_} {post_pt_root_id} PRE")
                             # end_timeblock("call_determine_pt_subtreecell_4")
-                            
+
                             raise RuntimeError(f"shrassr(): Point about to be assigned to wrong child cell (or it's outside the parent bounds, which should have been caught earlier):\n  Lo: {cell_bounds_low}\n  Md: {cell_bounds_mid}\n  Hi: {cell_bounds_high}\n  Pt: [{pt_pos_x}, {pt_pos_y}, {pt_pos_z}]\n  ST: {subtree_cell_bounds}")
-                        
+
                         end_timeblock("check_subtree_bounds_DEBUG")
                         # end_start_timeblocks("check_subtree_bounds_DEBUG", "concatenate_dataframe")
 
@@ -559,7 +559,7 @@ def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotati
                         this_anno_pts_propagated_to_child[pt_desc] = True
 
             end_start_timeblocks("process_pre_point", "process_post_point")
-            
+
             end_timeblock("process_post_point")
 
             num_pts_propagated_to_child = sum([1 if v else 0 for v in this_anno_pts_propagated_to_child.values()])
@@ -568,7 +568,7 @@ def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotati
 
             # if pre_point_propagated_to_child and post_point_propagated_to_child:
             #     num_cell_nondups += 1
-            
+
             if num_pts_propagated_to_child == 0:
                 raise RuntimeError(f"No annotation spatial indexing points were propagated to a child")
 
@@ -604,7 +604,7 @@ def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotati
                 raise RuntimeError(f"BB shrassr()")
 
             end_start_timeblocks("gather_in_bounds", "run_annotation_points_loop")
-            
+
             this_anno_pts_propagated_to_child = [False] * len(pt_positions)
             tree_level_child_cell_local_ids = set()
             for pt_idx, [pt_pos_x, pt_pos_y, pt_pos_z] in enumerate(pt_positions):
@@ -655,7 +655,7 @@ def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotati
 
                         this_anno_pts_propagated_to_child[pt_idx] = True
                         end_timeblock("annotation_non_dup")
-                
+
                 end_timeblock("annotation_points_loop")
 
             end_start_timeblocks("run_annotation_points_loop", "gather_num_pts_propagated_to_child")
@@ -665,9 +665,9 @@ def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotati
 
             if num_pts_propagated_to_child == 0:
                 raise RuntimeError(f"No annotation spatial indexing points were propagated to a child")
-            
+
             end_end_timeblocks("gather_num_pts_propagated_to_child", "annotations_loop")
-        
+
         if verbose:
             logging.info(f"Total duplicates, reference copies, deep copies: {num_cell_dups:>12} {num_ref_copies:>12} {num_deep_copies:>12}")
 
@@ -777,9 +777,9 @@ def save_this_treecell_data_as_object(annos_this_level, subdir, subsplit_id, num
 def save_this_treecell_data(annos_this_level, subsplit_id, num_splits, split_id, tree_level, tree_level_cell_id, tree_level_shard_histograms, morton_code, cell_bounds_low, cell_bounds_high):
     if len(annos_this_level) <= 0:
         return
-    
+
     start_timeblock("save_this_treecell_data()")
-    
+
     shard_hex = get_shard_hex(tree_level, tree_level_cell_id)
     tree_level_shard_histograms[tree_level][tuple(tree_level_cell_id)] = shard_hex
     subdir = f"{results_loc}completed_treecells/annotations_one_treecell__subsplit-{subsplit_id:02}__split-{split_id:03}@{num_splits}__treelevel-{tree_level:02}__treelevelcellid-{','.join([f'{v:0>3}' for v in tree_level_cell_id])}__shard-{shard_hex}/"
@@ -797,9 +797,9 @@ def save_this_treecell_data(annos_this_level, subsplit_id, num_splits, split_id,
     filepath = f"{subdir}oct_tree_cell_bounds.txt"
     # logging.info(f"Writing one cell bounds file:\n  For file: {ramdatapond_key}\n  File: {filepath}\n  Cell bounds: {cell_bounds_low} {cell_bounds_high}")
     ram_data_pond.write_to_disk_or_ram_data_pond(filepath, str([cell_bounds_low, cell_bounds_high]))
-    
+
     end_start_timeblocks("write_cell_bounds_metadata_file", "write_subtree_metadata_file")
-    
+
     filepath = f"{subdir}oct_tree__tree_cell__info.txt"
     # logging.info(f"Writing one cell info file (for debugging): {filepath}")
     s = \
@@ -835,7 +835,7 @@ def save_subtrees(annos_children_levels, subsplit_id, num_splits, split_id, tree
                 # It's crucial to only write nonempty DataFrames. The eventual lack of any remaining tree child files will indicate that this stage of processing is complete.
                 if len(annos_child_levels) <= 0:
                     continue
-                
+
                 start_timeblock("save_subtree_header_misc")
 
                 tree_child_level_cell_id = [
@@ -862,9 +862,9 @@ def save_subtrees(annos_children_levels, subsplit_id, num_splits, split_id, tree
                 elif isinstance(annos_child_levels, list):  # A list of Annotation subclass objects
                     # See important note regarding RAMDataPond usage at the top of save_this_treecell_data_as_object()
                     ram_data_pond.write_to_disk_or_ram_data_pond(object_key, annos_child_levels)
-                
+
                 end_start_timeblocks("save_subtree_data", "write_cell_bounds_metadata_file")
-                
+
                 if annos_child_levels is not None and len(annos_child_levels) > 0:
                     subtree_cell_bounds = determine_subtree_bounds(
                         cell_bounds_low,
@@ -885,9 +885,9 @@ def save_subtrees(annos_children_levels, subsplit_id, num_splits, split_id, tree
                     # with open(filepath, 'w') as f:
                     #     f.write(str(subtree_cell_bounds))
                     ram_data_pond.write_to_disk_or_ram_data_pond(filepath, str(subtree_cell_bounds))
-                
+
                 end_start_timeblocks("write_cell_bounds_metadata_file", "write_subtree_metadata_file")
-                
+
                 filepath = f"{subtree_dir}oct_tree__subtree__info.txt"
                 # logging.info(f"  Writing one cell info file (for debugging): {filepath}")
                 s = \
@@ -904,18 +904,18 @@ Child cell bounds:  {subtree_cell_bounds}
                 #     f.write(s)
                 ram_data_pond.write_to_disk_or_ram_data_pond(filepath, s)
                 end_timeblock("write_subtree_metadata_file")
-    
+
     end_timeblock("save_subtrees()")
 
 def confirm_all_annotations_within_bounds(src_loc, annotations_file_or_rawtable, cell_bounds_low, cell_bounds_high, label, force_ram=False):
-    
+
     # In the interests of expediting peformance, only run this function during periods of development when this issue may be impacted by code changes
     return
-    
+
     start_timeblock("confirm_all_annotations_within_bounds() DEBUG")
     # logging.info(f"\nconfirm_all_annotations_within_bounds() ({label})    src_loc: {src_loc}    data_loc: {data_loc}")
     # logging.info(f"  Cell bounds: {cell_bounds_low} {cell_bounds_high}")
-    
+
     columns = config['DATA_CONFIG']['columns']
     id_column = config['DATA_CONFIG']['id_column']
     # logging.info(f"id_column: {id_column}")
@@ -939,7 +939,7 @@ def confirm_all_annotations_within_bounds(src_loc, annotations_file_or_rawtable,
         annotations = annotations_file_or_rawtable
     elif isinstance(annotations_file_or_rawtable, list):  # A list of Annotation subclass objects
         annotations = annotations_file_or_rawtable
-    
+
     if isinstance(annotations_file_or_rawtable, str) or isinstance(annotations_file_or_rawtable, RawTable):
         spatial_pt_columns = config['DATA_CONFIG']['spatial_pt_columns']
 
@@ -997,7 +997,7 @@ def confirm_all_annotations_within_bounds(src_loc, annotations_file_or_rawtable,
 
 def add_tree_level_cell_id_to_saved_annotations(annos_this_level, tree_level_cell_id):
     start_timeblock("add_tree_level_cell_id_to_saved_annotations()")
-    
+
     treecell_index = '_'.join([str(v) for v in tree_level_cell_id])
 
     if isinstance(annos_this_level, pd.DataFrame):
@@ -1007,7 +1007,7 @@ def add_tree_level_cell_id_to_saved_annotations(annos_this_level, tree_level_cel
     elif isinstance(annos_this_level, list):  # A list of Annotation subclass objects
         for anno in annos_this_level:
             anno.add_treecell_index(treecell_index, "csv")
-    
+
     end_timeblock("add_tree_level_cell_id_to_saved_annotations()")
 
 def read_single_field_point_list(row):
@@ -1066,7 +1066,7 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
     cell_bounds_mid = [
         (cell_bounds_low[i] + cell_bounds_high[i]) / 2 for i in range(3)
     ]
-    
+
     end_timeblock("preprocess")
 
     columns = config['DATA_CONFIG']['columns']
@@ -1104,7 +1104,7 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
                     logging.info("")
                 except Exception as e:
                     logging.info(e)
-            
+
             # Check for the presence of a header line
             lines = ram_data_pond.read_nlines_from_disk_or_ram_data_pond(input_src, 1, src_loc==data_loc)
             # header_present = lines[0].startswith(columns[0 if id_column is not None else 1])
@@ -1184,7 +1184,7 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
                         ]
                 elif config['DATA_CONFIG']['structure'] == "one_annotation_per_row__multiple_points_per_row_in_one_field":
                     assert spatial_pt_columns == "single_field_list"
-                
+
                 for line_i, line in enumerate(lines):
                     # row = line.split(',')
                     reader = csv.reader(io.StringIO(line))
@@ -1194,10 +1194,10 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
                         id_ = row[id_column_idx]
                     else:
                         id_ = split_subsplit_id_start + line_i
-                    
+
                     if line_i < 3 or line_i > len(lines) - 4:
                         logging.info(f"Annotation line {line_i} of {len(lines)}, id: {id_:>10}")
-                    
+
                     if id_column is None:
                         line = f"{id_}," + line
                         row = [id_] + row
@@ -1222,7 +1222,7 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
                         annotation = LineAnnotation(id_, start, end, line.strip())
                     elif 'polyline_annotation_config' in config['DATA_CONFIG']:
                         annotation = PolyLineAnnotation(id_, list(pt_positions.values()), line.strip())
-                    
+
                     annotations.append(annotation)
             else:
                 annotations = input_src
@@ -1245,9 +1245,9 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
         # if verbose:
         #     logging.info(f"Unique post_pt_root_ids in input file ({len(post_pt_root_ids):,}) (first 5 shown): {post_pt_root_ids[:5]}")
         # end_start_timeblocks("get_unique_post_pt_root_ids", "process_input")
-        
+
         end_start_timeblocks("read_input", "process_input")
-        
+
         annos_this_level, annos_children_levels, num_cell_nondups = select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotations, tree_level, cell_bounds_low, cell_bounds_mid, cell_bounds_high, verbose)
 
         end_start_timeblocks("process_input", "call_add_tree_level_cell_id_to_saved_annotations()")
@@ -1271,7 +1271,7 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
         #             confirm_all_annotations_within_bounds(src_loc, annos_children_levels[x][y][z], subtree_cell_bounds[0], subtree_cell_bounds[1], "RRR")
 
         end_start_timeblocks("confirm_subtree_bounds_DEBUG", "tally_subtree_DEBUG_2")
-        
+
         if verbose:
             logging.info(f"Num rows saved in this oct tree cell:                                 {len(annos_this_level):>11,}")
             logging.info("Oct tree child cell row counts:")
@@ -1282,7 +1282,7 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
                     if verbose:
                         logging.info(f"  [{x}, {y}, {z}]    {len(annos_children_levels[x][y][z]):>11,}")
                     subtree_row_tally += len(annos_children_levels[x][y][z])
-        
+
         if verbose:
             logging.info(f"Total num rows saved in this treecell: {len(annos_this_level):>11,}")
             logging.info(f"Total num rows sent to oct subtrees:   {subtree_row_tally:>11,}")
@@ -1293,9 +1293,9 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
         # It's important to remove the header from the final output file so that, when we union the file with other splits,
         # the union doesn't get littered with numerous copies of the header row. Alternatively, the unioning step could judiciously remove the header from each incoming piece before it combines them.
         shard_hex = save_this_treecell_data(annos_this_level, subsplit_id, num_splits, split_id, tree_level, tree_level_cell_id, tree_level_shard_histograms, morton_code, cell_bounds_low, cell_bounds_high)
-        
+
         save_subtrees(annos_children_levels, subsplit_id, num_splits, split_id, tree_level, tree_level_cell_id, cell_bounds_low, cell_bounds_mid, cell_bounds_high)
-        
+
         # end_end_timeblocks("save_results", "process_one_treecell_input_file_or_dir()")
         end_timeblock("save_results")
         # end_timeblock("process_one_treecell_input_file_or_dir()")
@@ -1313,7 +1313,7 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
         annotations = []
     else:
         raise ValueError(f"Unknown structure: {config['DATA_CONFIG']['structure']}")
-    
+
     return True
 
 def process_input_files_for_one_tree_level_0(subsplit_id, subsplit_range_row_start, subsplit_range_row_end, src_loc, tree_level, tree_level_shard_histograms, input_file):
@@ -1322,7 +1322,7 @@ def process_input_files_for_one_tree_level_0(subsplit_id, subsplit_range_row_sta
     logging.info(f"input_file type: {type(input_file)}")
     file_size_bytes = os.path.getsize(input_file)
     logging.info(f"Top-level split input file ({file_size_bytes/1000000:,}M): {input_file}")
-    
+
     file_tree_level, tree_level_cell_id, tree_level_cell_id_str = 0, [0, 0, 0], "000,000,000"
 
     annotations_filename = os.path.basename(input_file)
@@ -1337,7 +1337,7 @@ def process_input_files_for_one_tree_level_0(subsplit_id, subsplit_range_row_sta
         elif "treelevelcellid-" in pc:
             tree_level_cell_id_str = pc.split("-")[1]
             tree_level_cell_id = [int(v) for v in tree_level_cell_id_str.split(",")]
-    
+
     assert file_tree_level == tree_level
 
     if config['DATA_CONFIG']['structure'] == 'one_annotation_per_file__one_point_per_row':
@@ -1367,7 +1367,7 @@ def process_input_files_for_one_tree_level_0(subsplit_id, subsplit_range_row_sta
         if input_dir[-1] != '/':
             input_dir += '/'
         logging.info(f"Determined input dir: {input_dir}")
-    
+
     if config['HIGHEST_SPLIT_ID'] is not None:
         if split_id > config['HIGHEST_SPLIT_ID']:
             end_timeblock("process_input_files_for_one_tree_level()")
@@ -1379,7 +1379,7 @@ def process_input_files_for_one_tree_level_0(subsplit_id, subsplit_range_row_sta
 
     if config['DATA_CONFIG']['structure'] == 'one_annotation_per_row__multiple_points_per_row':
         confirm_all_annotations_within_bounds(src_loc, input_file, cell_bounds_low, cell_bounds_high, "NNN")
-    
+
     data_src = None
     if config['DATA_CONFIG']['structure'] == 'one_annotation_per_row__multiple_points_per_row':
         data_src = input_file
@@ -1391,11 +1391,11 @@ def process_input_files_for_one_tree_level_0(subsplit_id, subsplit_range_row_sta
         raise ValueError(f"Unknown structure: {config['DATA_CONFIG']['structure']}")
 
     result = process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start, subsplit_range_row_end, 0, src_loc, data_src, cell_bounds_low, cell_bounds_high, num_splits, split_id, file_tree_level, tree_level_cell_id, tree_level_shard_histograms)
-    
+
     if result is None:
         # Subsplits are done
         return None
-    
+
     num_rows, num_saved, num_sent, num_cell_nondups, shard_hex = result
 
     return split_id, num_splits, num_rows, num_saved, num_sent, num_cell_nondups, [(tree_level_cell_id_str, shard_hex)]
@@ -1403,7 +1403,7 @@ def process_input_files_for_one_tree_level_0(subsplit_id, subsplit_range_row_sta
 def process_input_files_for_one_tree_level_1up(subsplit_id, src_loc, tree_level, tree_level_shard_histograms):
     # Since no split file was found, there must be subtree directories
     logging.info("No top-level split input file found. Looking for subtrees.")
-    
+
     # subtree_dir_contents = list(glob.glob(f"{src_loc}subtrees/subsplit-*__split-*_*subtree*/*"))
     subtree_dir_contents = ram_data_pond.glob_disk_or_ram_data_pond(f"{src_loc}subtrees/subsplit-*__split-*_*subtree*/*", src_loc==data_loc)
     logging.info(f"Subtree directory contents (first 9 shown, expecting 3 files per subtree subdir):\n  {'\n  '.join(subtree_dir_contents[:9])}\n")
@@ -1416,7 +1416,7 @@ def process_input_files_for_one_tree_level_1up(subsplit_id, src_loc, tree_level,
 
     subtree_keys = ram_data_pond.glob_disk_or_ram_data_pond(f"{src_loc}subtrees/subsplit-*__split-*_*subtree*/annotations_one_subtree_*", src_loc==data_loc)
     logging.info(f"Subtree objects ({len(subtree_keys)}) (first 3 shown):\n  {'\n  '.join(subtree_keys[:3])}\n")
-    
+
     total_rows, total_saved, total_sent = 0, 0, 0
     total_num_cell_nondups = 0
     one_tree_level__all_tree_level_cell_ids = []
@@ -1440,7 +1440,7 @@ def process_input_files_for_one_tree_level_1up(subsplit_id, src_loc, tree_level,
             if subtree_key_i == 0:
                 logging.info(f"Processing subtree subtree_filename: {subtree_filename}")
             # logging.info(f"Processing subtree input file of size {file_size_bytes/1000000:,}M: {subtree_filename}")
-            
+
             # These lower levels of the tree receive their bounds from their parent instead of deriving them from the global bounds in the config
             cell_bounds_file = f"{annotations_subdir}/oct_tree_cell_bounds.txt"
             # with open(cell_bounds_file) as f:
@@ -1470,21 +1470,21 @@ def process_input_files_for_one_tree_level_1up(subsplit_id, src_loc, tree_level,
                     tree_level_cell_id = [int(v) for v in tree_level_cell_id_str.split(",")]
 
             assert file_tree_level == tree_level
-    
+
             if config['HIGHEST_SPLIT_ID'] is not None:
                 if split_id > config['HIGHEST_SPLIT_ID']:
                     end_timeblock("process_input_files_for_one_tree_level()")
                     return None, None
                 if len(subtree_csv_files) // 10 > 0 and subtree_key_i % (len(subtree_csv_files) // 10) == 0:
                     logging.info(f"B Debugging split {split_id} <= {config['HIGHEST_SPLIT_ID']}")
-            
+
             # logging.info(f"Calling process_one_treecell_input_file_or_dir() with cell bounds: {cell_bounds_low} {cell_bounds_high}")
             result = process_one_treecell_input_file_or_dir(subsplit_id, None, None, subtree_key_i, src_loc, subtree_object, cell_bounds_low, cell_bounds_high, num_splits, split_id, file_tree_level, tree_level_cell_id, tree_level_shard_histograms)
 
             if result is None:
                 # Subsplits are done
                 return None
-            
+
             num_rows, num_saved, num_sent, num_cell_nondups, shard_hex = result
 
             tr, tsv, tsn = total_rows, total_saved, total_sent
@@ -1500,11 +1500,11 @@ def process_input_files_for_one_tree_level_1up(subsplit_id, src_loc, tree_level,
             #     dump_profile(False)
 
         # logging.info("\n" + ". " * 50 + "\n")
-    
+
         return split_id, num_splits, total_rows, total_saved, total_sent, total_num_cell_nondups, one_tree_level__all_tree_level_cell_ids
     else:
         logging.info("No subtree files found")
-    
+
     return None, None, None, None, None, None, None
 
 def process_input_files_for_one_tree_level(subsplit_id, subsplit_range_row_start, subsplit_range_row_end, src_loc, tree_level, tree_level_shard_histograms):
@@ -1517,7 +1517,7 @@ def process_input_files_for_one_tree_level(subsplit_id, subsplit_range_row_start
     start_timeblock("process_input_files_for_one_tree_level()")
 
     logging.info(f"process_input_files_for_one_tree_level() Tree level: {tree_level}")
-    
+
     if tree_level == 0:
         if config['DATA_CONFIG']['structure'] == 'one_annotation_per_row__multiple_points_per_row':
             # split_files = glob.glob(f"{src_loc}*split-*_rows-*.csv")
@@ -1530,11 +1530,11 @@ def process_input_files_for_one_tree_level(subsplit_id, subsplit_range_row_start
             split_files = ram_data_pond.glob_disk_or_ram_data_pond(f"{src_loc}*split-*.csv", src_loc==data_loc)
         else:
             raise ValueError(f"Unknown structure: {config['DATA_CONFIG']['structure']}")
-        
+
         if len(split_files) > 1:
             raise ValueError("Expected <=1 top-level split input files")
         split_file = split_files[0]
-    
+
         result = process_input_files_for_one_tree_level_0(subsplit_id, subsplit_range_row_start, subsplit_range_row_end, src_loc, tree_level, tree_level_shard_histograms, split_file)
         if result is None:
             # Subsplits are done
@@ -1548,11 +1548,11 @@ def process_input_files_for_one_tree_level(subsplit_id, subsplit_range_row_start
             end_timeblock("process_input_files_for_one_tree_level()")
             return None
         split_id, num_splits, total_rows, total_saved, total_sent, total_num_cell_nondups, one_tree_level__all_tree_level_cell_ids = result
-    
+
     logging.info(f"Total rows, total saved, & total sent deeper across this split or set of subtrees:    {total_rows:,}    {total_saved:,}    {total_sent:,}")
     if total_saved + total_sent - total_num_cell_nondups != total_rows:
         logging.error(f"ERROR! (2) Num saved + sent rows - num_cell_dups != total rows: {total_saved:,} + {total_sent:,} - {total_num_cell_nondups:,} = {total_saved + total_sent + total_num_cell_nondups:,} != {total_rows:,}")
-    
+
     # I think this is no longer used, while at the same time it clutters the output with numerous files that impede CO Duration time to the next capsule
     # shards_summary_filepath = f"{results_loc}subsplit-{subsplit_id:02}__split-{split_id:03}@{num_splits}__tree_level-{tree_level}__tree_cell_shards.txt"
     # with open(shards_summary_filepath, 'w') as f:
@@ -1582,9 +1582,9 @@ def move_upstream_completed_tree_outputs_to_results(src_loc):
     # treecell_dirs = ram_data_pond.glob_disk_or_ram_data_pond(f"{src_loc}completed_treecells*", src_loc==data_loc)
     start_timeblock("call fastglob_ram_data_pond()")
     treecell_dirs = ram_data_pond.fastglob_ram_data_pond(f"{src_loc}completed_treecells", src_loc==data_loc)
-    
+
     end_start_timeblocks("call fastglob_ram_data_pond()", "treecell_dir loop")
-    
+
     logging.info(f"Moving {len(treecell_dirs)} completed tree cell dirs from {src_loc} to {results_loc}")
     for i, treecell_dir in enumerate(treecell_dirs):
         treecell_dirname = os.path.basename(treecell_dir)
@@ -1593,7 +1593,7 @@ def move_upstream_completed_tree_outputs_to_results(src_loc):
         # shutil.move(treecell_dir, f"{results_loc}{treecell_dirname}")
         # ram_data_pond.move_file_on_disk_or_ram_data_pond(treecell_dir, f"{results_loc}{treecell_dirname}")
         ram_data_pond.move_files_via_prefix_replacement(treecell_dir, f"{results_loc}{treecell_dirname}")
-    
+
     end_end_timeblocks("treecell_dir loop", "move_upstream_completed_tree_outputs_to_results()")
 
 def process_one_tree_level(subsplit_id, subsplit_range_row_start, subsplit_range_row_end, treelevel_iter, src_loc, tree_level_shard_histograms):
@@ -1602,7 +1602,7 @@ def process_one_tree_level(subsplit_id, subsplit_range_row_start, subsplit_range
 
     if treelevel_iter > config['MAX_NUM_TREE_LEVELS']:
         raise RuntimeError("Tree level iteration exceeded max num tree levels")
-    
+
     if treelevel_iter == 0:
         logging.info(f"{src_loc} contents ({len(ram_data_pond.glob_disk_or_ram_data_pond(f'{src_loc}*', src_loc==data_loc))}) (first 10 shown):\n  {'\n  '.join(ram_data_pond.glob_disk_or_ram_data_pond(f'{src_loc}*', src_loc==data_loc)[:10]).strip()}\n")
     else:
@@ -1611,7 +1611,7 @@ def process_one_tree_level(subsplit_id, subsplit_range_row_start, subsplit_range
     logging.info(f"{src_loc} subtrees contents ({len(ram_data_pond.glob_disk_or_ram_data_pond(f'{src_loc}subtrees/*', src_loc==data_loc))}) (first 3 shown):\n  {'\n  '.join(ram_data_pond.glob_disk_or_ram_data_pond(f'{src_loc}subtrees/*', src_loc==data_loc)[:3]).strip()}\n")
     logging.info(f"{src_loc} completed_treecells contents ({len(ram_data_pond.glob_disk_or_ram_data_pond(f'{src_loc}completed_treecells/*', src_loc==data_loc))}) (first 3 shown):\n  {'\n  '.join(ram_data_pond.glob_disk_or_ram_data_pond(f'{src_loc}completed_treecells/*', src_loc==data_loc)[:3]).strip()}\n")
     logging.info(f"{src_loc} completed_treecells subcontents ({len(ram_data_pond.glob_disk_or_ram_data_pond(f'{src_loc}completed_treecells/*/*', src_loc==data_loc))}) (first 3 shown):\n  {'\n  '.join(ram_data_pond.glob_disk_or_ram_data_pond(f'{src_loc}completed_treecells/*/*', src_loc==data_loc)[:3]).strip()}\n")
-    
+
     # logging.info(f"Input completed tree cells (packed):\n  {'\n  '.join(sorted(list(glob.glob(f'{src_loc}completed_treecells*')))).strip()}\n")
 
     # logging.info(f"Input completed tree cells (not packed):\n  {'\n  '.join(sorted(list(glob.glob(f'{src_loc}completed_treecells/annotations_one_treecell*')))).strip()}\n")
@@ -1633,7 +1633,7 @@ def process_one_tree_level(subsplit_id, subsplit_range_row_start, subsplit_range
     if split_id is None:
         end_timeblock("process_one_tree_level()")
         return None
-    
+
     move_upstream_completed_tree_outputs_to_results(src_loc)
 
     logging.info(f"\nProcessing of tree level {tree_level} is done")
@@ -1643,7 +1643,7 @@ def process_one_tree_level(subsplit_id, subsplit_range_row_start, subsplit_range
     # # results_loc_subcontents = sorted(list(glob.glob(f"{results_loc}*/*")))
     # results_loc_subcontents = ram_data_pond.glob_disk_or_ram_data_pond(f"{results_loc}*/*")
     # logging.info(f"\nresults_loc subcontents ({len(results_loc_subcontents)}) (first 5 shown):\n  {'\n  '.join(results_loc_subcontents[:5]).strip()}\n")
-    
+
     # If there are no more subtrees, the tree level iteration is complete (we have reached the bottom of the tree)
     # subtree_input_dirs = list(glob.glob(f"{results_loc}split*subtree*")) + list(glob.glob(f"{results_loc}subtrees.tar*"))
     # subtree_input_dirs = ram_data_pond.glob_disk_or_ram_data_pond(f"{results_loc}split*subtree*") + ram_data_pond.glob_disk_or_ram_data_pond(f"{results_loc}subtrees.tar*")
@@ -1660,11 +1660,11 @@ def process_one_tree_level(subsplit_id, subsplit_range_row_start, subsplit_range
     next_src_dir = f"{data_loc}results_treelevel-{treelevel_iter}/"
     logging.info(f"\nMoving results to source location for next tree level iteration: {next_src_dir}")
     # os.makedirs(next_src_dir)
-    
+
     if ram_data_pond.ram_data_pond is None:
         # for item in os.listdir(results_loc):
             # shutil.move(item, f"{next_src_dir}{item}")
-        
+
         for item in glob.glob(f"{results_loc}*"):
             item_tail = item[len(results_loc):]
             logging.info(f"Moving\n  {item}\n  to\n  {next_src_dir}{item_tail}")
@@ -1676,10 +1676,10 @@ def process_one_tree_level(subsplit_id, subsplit_range_row_start, subsplit_range
         #     dst = '/'.join(item.split('/')[2:])
         #     # logging.info(f"Moving\n  {item}\n  to\n  {next_src_dir}{dst}")
         #     ram_data_pond.move_file_on_disk_or_ram_data_pond(item, next_src_dir + dst)
-        
+
         # See note inside move_files_via_prefix_replacement().
         ram_data_pond.move_files_via_prefix_replacement(results_loc, next_src_dir)
-    
+
     src_loc = next_src_dir
 
     end_end_timeblocks("move_tree_level_results_to_source_for_next_tree_level_iteration", "process_one_tree_level()")
@@ -1689,7 +1689,7 @@ def process_one_tree_level(subsplit_id, subsplit_range_row_start, subsplit_range
 def archive_results(ARCHIVE_MEMORY_STORE, subsplit_id, split_id, num_splits):
     start_timeblock("write RAM data pond to disk")
     logging.info("Writing final results from RAM data pond to disk")
-    
+
     # ram_files = ram_data_pond.glob_disk_or_ram_data_pond("*")
     # logging.info(f"ram_data_pond *:\n  {'\n  '.join(ram_files)}")
     # ram_files = ram_data_pond.glob_disk_or_ram_data_pond("*/*")
@@ -1727,7 +1727,7 @@ def archive_results(ARCHIVE_MEMORY_STORE, subsplit_id, split_id, num_splits):
             if annotations_one_treecell_ram_object_i < 3:
                 logging.info(f"Retrieved a list of {len(annotations_one_treecell_ram_list)} annotations from the RAMDataPond")
             end_timeblock("annotation file loop body setup")
-            
+
             csv_rows = []
             start_timeblock("gather annotations raw data")
             for annotation_i, annotation in enumerate(annotations_one_treecell_ram_list):
@@ -1742,7 +1742,7 @@ def archive_results(ARCHIVE_MEMORY_STORE, subsplit_id, split_id, num_splits):
                 logging.info(f"Writing annotation list of len ({len(annotations_one_treecell_ram_list)}) to csv: {annotations_one_treecell_ram_object}")
             ram_data_pond.write_to_disk_or_ram_data_pond(annotations_one_treecell_ram_object + ".csv", csv_str)
             end_timeblock("call write_to_disk_or_ram_data_pond()")
-        
+
         else:
             end_timeblock("annotation file loop body setup")
         end_timeblock("annotation file loop body")
@@ -1754,7 +1754,7 @@ def archive_results(ARCHIVE_MEMORY_STORE, subsplit_id, split_id, num_splits):
     end_timeblock("glob ram data pond final csvs")
     logging.info(f"annotations_one_treecell_ram_files ({len(annotations_one_treecell_ram_files)}) (first 5 shown):\n  {'\n  '.join(annotations_one_treecell_ram_files[:5])}")
     end_timeblock("convert annotations to archival format")
-    
+
     total_data_size = 0
     if not ARCHIVE_MEMORY_STORE:
         assert False, "Development & implementation of this option has fallen behind"
@@ -1827,10 +1827,10 @@ def archive_results(ARCHIVE_MEMORY_STORE, subsplit_id, split_id, num_splits):
         # This produces a larger number of files since it separates the shards,
         # which enables great horizontal distribution in the next stage,
         # but increasing the number of archive files can slow down Nextflow's file handling between capsules.
-        
+
         # treecell_dirs = ram_data_pond.fastglob_ram_data_pond(f"{results_loc}completed_treecells/annotations_one_treecell") + ram_data_pond.fastglob_ram_data_pond(f"{src_loc}completed_treecells/annotations_one_treecell", src_loc==data_loc)
         # logging.info(f"treecell_dirs ({len(treecell_dirs)}) (first 5 shown):\n  {'\n  '.join(sorted(treecell_dirs[:5])).strip()}\n")
-        
+
         treelevel_shards = defaultdict(set)  # Debug only
         completed_treecells_grouped_by_treelevel_and_shard = defaultdict(list)
         completed_treecells_grouped_by_treelevel_and_shardworker = defaultdict(list)
@@ -1849,7 +1849,7 @@ def archive_results(ARCHIVE_MEMORY_STORE, subsplit_id, split_id, num_splits):
             treelevel_shards[tree_level].add(shard_hex)  # Debug only
             completed_treecells_grouped_by_treelevel_and_shard[shard_worker_desc_file_hash].append(annotations_one_treecell_ram_file)
             completed_treecells_grouped_by_treelevel_and_shardworker[shard_worker_desc_file_hash].append(annotations_one_treecell_ram_file)
-        
+
         # Debug
         # for tree_level, shard_hexes in treelevel_shards.items():
         #     logging.info(f"\nTree level {tree_level} shards:")
@@ -1858,7 +1858,7 @@ def archive_results(ARCHIVE_MEMORY_STORE, subsplit_id, split_id, num_splits):
         #         preshift_bits=config['TREE_LEVEL_SHARDING_SPECS'][tree_level]['preshift_bits'],
         #         shard_bits=config['TREE_LEVEL_SHARDING_SPECS'][tree_level]['shard_bits'],
         #         minishard_bits=config['TREE_LEVEL_SHARDING_SPECS'][tree_level]['minishard_bits'])
-            
+
         #     # Generate the full shard used/unused output as one text line
         #     s = f"  {tree_level:0>2}:"
         #     for shard_num in range(sharding_spec.num_shards):
@@ -1866,7 +1866,7 @@ def archive_results(ARCHIVE_MEMORY_STORE, subsplit_id, split_id, num_splits):
         #         s += "_" + (shard_hex if shard_hex in shard_hexes else "_" * len(shard_hex))
         #     logging.info(s)
         logging.info("")
-        
+
         # GROUP_BY_SHARD_WORKER = false is the older implementation, in which all results are separated by shard. Setting this switch to true enables shard worker grouping to facilitate the next capsule in only reading the files it needs, in true MapReduce Reducer style, which is already implemented for the ID and relation indices. Once debuggedd and confirmed, the true setting should be used going forward.
         GROUP_BY_SHARD_WORKER = True
         completed_treecells_src = completed_treecells_grouped_by_treelevel_and_shard if not GROUP_BY_SHARD_WORKER else completed_treecells_grouped_by_treelevel_and_shardworker
@@ -1937,7 +1937,7 @@ def archive_results(ARCHIVE_MEMORY_STORE, subsplit_id, split_id, num_splits):
                 end_timeblock("add file to in-memory archive")
         # logging.info(f"Wrote {num_ram_data_pond_files_a}|{num_ram_data_pond_files_b} RAM data pond files of {total_data_size/1000000:,}M to disk, resulting in archive file of length {os.path.getsize(archive_filepath)/1000000:,}M")
         end_timeblock("archive RAM data pond in memory")
-        
+
     logging.info(f"Wrote {total_data_size/1000000:,}M from RAM data pond to disk")
     end_timeblock("write RAM data pond to disk")
 
@@ -1970,7 +1970,7 @@ def upload_results_to_bucket():
 
         t1 = default_timer()
         logging.info(f"External bucket upload elapsed time: {seconds_to_hms(t1 - st)}")
-        
+
         logging.info("")
         for file in files_to_upload_to_scratch:
             logging.info(f"Deleting result file after uploading to external bucket: {file}")
@@ -1980,7 +1980,7 @@ def upload_results_to_bucket():
         logging.info(f"Delete results elapsed time: {seconds_to_hms(t1 - st)}")
     else:
         logging.info(f"\n{data_loc}PASS_DATA_BETWEEN_CAPSULES_METHOD indicates Code Ocean. Results won't be uploaded externally.")
-    
+
     end_timeblock("upload results to external storage")
 
 # def pack_completed_treecells(split_id):
@@ -2052,7 +2052,7 @@ def upload_results_to_bucket():
 #                         tar.add(treecell_dir, arcname=os.path.basename(treecell_dir))
 #                     for treecell_dir in treecell_dirs:
 #                         shutil.rmtree(treecell_dir)
-    
+
 #     end_timeblock("pack_completed_treecells()")
 
 def process_subsplit(subsplit_id, subsplit_range_row_start, subsplit_range_row_end):
@@ -2087,7 +2087,7 @@ def process_subsplit(subsplit_id, subsplit_range_row_start, subsplit_range_row_e
         logging.error(f"BEWARE!  BEWARE!  BEWARE!\n  Outer times will not show full accumulated time relative to their inner times at these mid-processing stages.\n  Only the final profile display will show all accumulated time.")
         dump_profile(False)
         end_timeblock("tree_level_loop")
-    
+
     logging.info("\n" + "* " * 50 + "\n")
 
     # logging.info("Tree level, tree cell shard histograms:\n")
@@ -2099,7 +2099,7 @@ def process_subsplit(subsplit_id, subsplit_range_row_start, subsplit_range_row_e
         # ARCHIVE_MEMORY_STORE: Pack RAM data pond into a tar or custom buffer and then write a single tar or custom archive file to disk.
         # Else, write each RAM data pond file to a separate file on disk (which could be 1000s and impede CodeOcean performance between capsules).
         ARCHIVE_MEMORY_STORE = True
-        
+
         if ram_data_pond.ram_data_pond is not None:
             archive_results(ARCHIVE_MEMORY_STORE, subsplit_id, split_id, num_splits)
 
@@ -2107,7 +2107,7 @@ def process_subsplit(subsplit_id, subsplit_range_row_start, subsplit_range_row_e
         #     upload_results_to_bucket()
         # else:
         #     logging.info(f"\n{data_loc}DEBUG_FLAG.txt file found. Results won't be uploaded externally.")
-        
+
         analyze_memory_usage()
         ram_data_pond_size = ram_data_pond.get_total_size()
         logging.info(f"RAM data pond size: {len(ram_data_pond.ram_data_pond)} items    {ram_data_pond_size} B    {ram_data_pond_size / 1000:,.1f} KB    {ram_data_pond_size / 1000000:,.1f} MB\n")
@@ -2117,7 +2117,7 @@ def process_subsplit(subsplit_id, subsplit_range_row_start, subsplit_range_row_e
         #     analyze_memory_usage()
         #     ram_data_pond_size = ram_data_pond.get_total_size()
         #     logging.info(f"RAM data pond size: {len(ram_data_pond.ram_data_pond)} items    {ram_data_pond_size} B    {ram_data_pond_size / 1000:,.1f} KB    {ram_data_pond_size / 1000000:,.1f} MB\n")
-    
+
     end_timeblock("process_subsplit()")
 
     return split_id, True
@@ -2126,7 +2126,7 @@ def collate_subsplit_archives():
     start_start_timeblocks("collate_subsplit_archives()", "collect_subsplit_archives")
 
     logging.info("\nCollating subsplit archives")
-    
+
     list_directory(f"{results_loc}*")
     list_directory(f"{results_loc}*/*")
     list_directory(f"{results_loc}*/*/*")
@@ -2158,13 +2158,13 @@ def collate_subsplit_archives():
                         logging.info(f"          Archive {archive_i+1} section: {archive_section_nosubsplit.split('/')[0]}")
                         logging.info(f"          Archive {archive_i+1} section length: {len(archive_sections[archive_section])}")
                     multiarchive_sections[archive_section_nosubsplit] += archive_sections[archive_section]
-    
+
                 if archive_i < 1:
                     logging.info(f"\n      Deleting subsplit archive {archive_i+1}: {archive}")
                 os.remove(archive)
-        
+
         # logging.info(f"multiarchive_sections keys: {multiarchive_sections.keys()}")
-        
+
         end_start_timeblocks("collect_subsplit_archives", "merge_archives")
 
         logging.info("\n  Merging archives")
@@ -2192,7 +2192,7 @@ def collate_subsplit_archives():
                 if multiarchive_section_i < 1:
                     # logging.info(f"      Archived filepath: {multiarchive_section}")
                     logging.info(f"      Archived filepath content length: {len(content)}\n")
-    
+
     logging.info("\nResults after merging subsplits:")
     list_directory(f"{results_loc}*")
     list_directory(f"{results_loc}*/*")
@@ -2205,7 +2205,7 @@ if __name__ == "__main__":
     results_loc = "../results/"
 
     logging_uid = hex(int(random.random()*1000000000000))[2:]
-    
+
     # There shouldn't be any upstream logs in this capsule
     # # Copy upstream logs from input to output
     # logs = sorted(list(glob.glob(f"{data_loc}log*.log")))
@@ -2263,23 +2263,24 @@ if __name__ == "__main__":
 
     start_start_timeblocks("run capsule", "init_stuff")
 
+    # Make sure this subpipeline's config is loaded last so it can override any other config values
     config = read_config(["id", "relation", "spatial"])
     logging.basicConfig(level=get_logging_level_from_desc(config['LOGGING_LEVEL']), handlers=[
             logging.StreamHandler(sys.stdout),
             logging.FileHandler(f"{results_loc}log_build_spatial_index_oct_tree_{logging_uid}.log", mode="a")
         ], format=config['LOGGING_FORMAT'], force=True)
-    
+
     for module in ['simple_writer_no_spatial_indexing', 'sharding', 'annotations']:
         logging.getLogger(module).setLevel(get_logging_level_from_desc(config['PRECOMPUTED_FILE_WRITER_LOGGING_LEVEL']))
         logging.getLogger(module).addHandler(logging.StreamHandler(sys.stdout))
         logging.getLogger(module).addHandler(logging.FileHandler(f"{results_loc}log_build_spatial_index_oct_tree_{logging_uid}.log", mode="a"))
-    
+
     if config['SPATIAL_INDEX_ENABLED']:
         data_loc_contents = sorted(os.listdir(data_loc))
         data_loc_contents = [v for v in data_loc_contents if "placeholder" not in v]
         logging.info(f"{data_loc} contents ({len(data_loc_contents)}) (first 30 shown):")
         logging.info('  ' + '\n  '.join(data_loc_contents[:30]).strip() + '\n')
-        
+
         logging.info(f"{data_loc} subcontents ({len(list(glob.glob(f'{data_loc}*/*')))}) (first 5 shown):\n  {'\n  '.join(sorted(list(glob.glob(f'{data_loc}*/*'))[:5])).strip()}\n")
 
         start_timeblock("read_shard_worker_descriptions")
@@ -2313,11 +2314,11 @@ if __name__ == "__main__":
         else:
             # If this is the first iteration, read from the upstream input directory (initialize src_loc to data_loc).
             # If this is any subsequent iteration, read from the previous iteration's results directory.
-            
+
             analyze_memory_usage()
             ram_data_pond_size = ram_data_pond.get_total_size()
             logging.info(f"RAM data pond size: {len(ram_data_pond.ram_data_pond)} items    {ram_data_pond_size} B    {ram_data_pond_size / 1000:,.1f} KB    {ram_data_pond_size / 1000000:,.1f} MB\n")
-            
+
             end_timeblock("init_stuff")
 
             src_loc = None  # Define here so it has global scope later
@@ -2342,14 +2343,14 @@ if __name__ == "__main__":
                 if not success:
                     break
                 subsplit_range_row_start += config['DATA_CONFIG']['data_size'][5]
-                
+
                 analyze_memory_usage()
                 ram_data_pond.clear()
-            
+
             logging.info("\n" + "#" * 100)
             logging.info("#" * 100)
             logging.info("#" * 100 + "\n")
-            
+
             # The archives are divided by subsplit at this point, but the next capsule will expect them to be grouped by split,
             # so we need to collate them back together now.
             collate_subsplit_archives()
@@ -2377,17 +2378,17 @@ if __name__ == "__main__":
                 shutil.copy(f, f"{results_loc}{os.path.basename(f)}")
     else:
         end_timeblock("init_stuff")
-    
+
     start_timeblock("finalize_results()")
     finalize_results(results_loc)
     end_timeblock("finalize_results()")
-    
+
     analyze_memory_usage()
     ram_data_pond_size = ram_data_pond.get_total_size()
     logging.info(f"RAM data pond size: {len(ram_data_pond.ram_data_pond)} items    {ram_data_pond_size} B    {ram_data_pond_size / 1000:,.1f} KB    {ram_data_pond_size / 1000000:,.1f} MB\n")
 
     end_timeblock("run capsule")
-    
+
     dump_profile()
 
 logging.info("\nDone")

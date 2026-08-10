@@ -33,7 +33,7 @@ def get_shard_hex(shard_number: int, shard_bits: int, force_str: bool) -> str:
     # There is code in the 'generate id index shards' capsule, function extract_archives(), that needs to know which of these two methods is used
     # return f"{'"' if force_str else ''}{shard_number:0{padding}x}{'"' if force_str else ''}"
     return f"{'_' if force_str else ''}{shard_number:0{padding}x}"
-        
+
 def determine_row_shard_hex(row, sharding_spec, id_column, split_id_start, force_str: bool):
     if id_column is not None:
         id_ = int(row[id_column])  # The default numpy datatype will cause trouble in the sharding functions, so convert it to an int
@@ -61,7 +61,7 @@ def process_text_line(line_i, line, header_reverse_map, id_column, split_id_star
     if id_ in all_ids:
         num_dup_ids += 1
     all_ids.add(id_)
-    
+
     line = line.strip() + f",{shard_hex}\n"
 
     if not force_str:
@@ -108,23 +108,23 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
         #         break
 
 
-        
+
         # We should receive precisely one input
         if len(input_files) != 1:
             raise RuntimeError(f"Expected exactly 1 input file: {input_files}")
-        
+
         input_file = input_files.pop()  # Safe since we know there is precisely one item in the set
     else:
         if input_file.endswith(".csv"):
             file_format = "csv"
         elif input_file.endswith(".parquet"):
             file_format = "parquet"
-    
+
     file_size_bytes = os.path.getsize(input_file)
     logging.info(f"file_format: {file_format}")
     logging.info(f"Top-level split input file: {input_file}")
     logging.info(f"Top-level split input file size: {file_size_bytes} bytes")
-    
+
     input_filename = os.path.basename(input_file)
     if not split_id:
         pcs = input_filename[:input_filename.rindex('.')].split("__")
@@ -135,6 +135,8 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
                 split_id, num_splits = (int(v) for v in splitnm.split('@'))
                 break
         logging.info(f"Num splits, Split id: {num_splits}, {split_id}")
+    if not split_id:
+        raise ValueError("Input split file does not contain a split id")
     logging.info(f"Split id: {split_id}")
 
     # Debugging: confirm that the header row is or is not present based on the script's circumstances.
@@ -148,9 +150,9 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
                     logging.info(f"  Line {i+1:>2}: " + f.readline().strip())
         except Exception as e:
             logging.info(e)
-    
+
     sharding_spec = anno.ShardingSpec(hash=config['ID_SHARDING_HASH'], preshift_bits=config['ID_PRESHIFT_BITS'], shard_bits=config['ID_SHARDING_BITS'], minishard_bits=config['ID_MINISHARDING_BITS'])
-    
+
     header = None
 
     if 'id_src' in config['DATA_CONFIG']:
@@ -162,7 +164,7 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
     # logging.info(f"id_column: {id_column}")
     if id_column is None:
         logging.info(f"id_column is NULL, so it will be inferred from the split id and row idx, and inserted into the corresponding id column: {columns[0]}.")
-    
+
     split_size = config['DATA_CONFIG']['data_size'][3]
     split_id_start = (split_id - 1) * split_size + 1
     logging.info(f"split_id_start: {split_id_start} (only used if config id_column is null)")
@@ -178,7 +180,7 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
             cols = lines[0].split(',')
             header_present = cols[0] == columns[0] or cols[1] == columns[1]  # Sometimes pandas leaves the first column in the header row
             logging.info(f"header_present: {header_present}")
-            
+
             if not header_present:
                 # We shouldn't need a header in a pipeline because the previous capsule should have added it.
                 df = pd.read_csv(input_file, names=config['DATA_CONFIG']['columns'], index_col=False)  # Header is explicitly passed in
@@ -189,7 +191,7 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
             df = pd.read_parquet(input_file, engine=config['PARQUET_ENGINE'])
 
         timestamps.append(("process_input_file() read input", default_timer()))
-        
+
         logging.info(f"\nNum lines (rows) in split: {len(df)}")
 
         pd.set_option('display.max_columns', None)
@@ -198,7 +200,7 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
             df.insert(0, columns[0], np.arange(split_id_start, split_id_start+len(df)))
 
         timestamps.append(("process_input_file() insert ID column", default_timer()))
-        
+
         # Add a new column 'Category' using the apply function
         df['shard_hex'] = df.apply(determine_row_shard_hex, axis=1, args=(sharding_spec, id_column, split_id_start, True,))
         timestamps.append(("process_input_file() add shard_hex column", default_timer()))
@@ -234,7 +236,7 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
         # Even though the file is a CSV, and therefore amenable to Pandas processing, we can process it much more effciently line by line as a text file
 
         header_reverse_map = {col: i for i, col in enumerate(config['DATA_CONFIG']['columns'])}
-        
+
         shard_lines = defaultdict(list)
         line_count = 0
         with open(input_file) as f:
@@ -249,16 +251,16 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
                     header_reverse_map = {col: i for i, col in enumerate(data_header)}
                 else:
                     process_text_line(line_count, line, header_reverse_map, id_column, split_id_start, sharding_spec, shard_lines, True)
-    
+
             line_count += 1
 
         timestamps.append(("process_input_file() read input and process lines", default_timer()))
-        
+
         header = config['DATA_CONFIG']['columns'] + ['shard_hex']
 
         if id_column is None:
             raise RuntimeError("Support for FILE_PROCESSING_METHOD == 'text' and inferred index not implemented yet")
-    
+
         shard_hexes = sorted(list(shard_lines.keys()))
         logging.info(f"\nNum lines (rows) in split: {line_count}")
 
@@ -279,13 +281,13 @@ def process_input_file(input_file=None, num_splits=None, split_id=None):
         logging.info(f"  Total shard lines accumulated across all shards: {total_shard_lines}")
 
         timestamps.append(("process_input_file() write lines", default_timer()))
-    
+
     return split_id, num_splits, shard_hexes, header
 
 def process_test_file():
     # Look for a test file that indicates we should process a test scenario
     input_test_filepath = None
-    TEST_FILE_FORMAT = "csv"  # None for production run. Else "csv" or "parquet" for test.
+    TEST_FILE_FORMAT = None  # None for production run. Else "csv" or "parquet" for test.
     if TEST_FILE_FORMAT:
         for test in range(1, 10):
             input_test_subdir = f"synapses_pni_2_v1_filtered_view__test{test}{'' if TEST_FILE_FORMAT == 'csv' else '__parquet'}/"
@@ -321,7 +323,7 @@ def process_test_file():
         split_id, num_splits, shard_hexes, header = process_input_file(split_filepath, num_splits, split_id)
 
         return split_id, num_splits, shard_hexes, header
-    
+
     return None, None, None, None
 
 def process_input_dir(input_dir=None, num_splits=None, split_id=None):
@@ -333,7 +335,6 @@ def process_input_dir(input_dir=None, num_splits=None, split_id=None):
         # data_sizes = list(config['DATA_CONFIG']['data_sizes'].keys())
         # data_sizes.remove('docstring')
         data_sizes = [config['DATA_CONFIG']['data_size'][0]]
-        print("AAA", data_sizes)
         for data_src in data_sizes:
             data_src_files = list(glob.glob(f"{data_loc}{data_src}*"))
             assert len(data_src_files) <= 1
@@ -341,13 +342,13 @@ def process_input_dir(input_dir=None, num_splits=None, split_id=None):
                 logging.info(f"Found input file for data_src '{data_src}' at {data_src_files[0]}")
                 assert os.path.isdir(data_src_files[0])
                 input_dirs.add(data_src_files[0])
-            
+
         # We should receive precisely one input
         if len(input_dirs) != 1:
             raise RuntimeError(f"Expected exactly 1 input dir: {input_dirs}")
-        
+
         input_dir = input_dirs.pop()  # Safe since we know there is precisely one item in the set
-    
+
     logging.info(f"Top-level split input dir: {input_dir}")
 
     input_dirname = os.path.basename(input_dir)
@@ -393,9 +394,9 @@ def process_input_dir(input_dir=None, num_splits=None, split_id=None):
     logging.info(f"Input files after moving and renaming (should be empty):\n  {'\n  '.join(files)}")
     files = sorted(list(glob.glob(f"{results_loc}shard_worker-*/*")))
     logging.info(f"Shard worker files after moving and renaming:\n  {'\n  '.join(files)}")
-    
+
     shard_hexes = sorted(list(shard_hexes))
-    
+
     return split_id, num_splits, shard_hexes, config['DATA_CONFIG']['columns']
 
 def archive_results(split_id, num_splits, header):
@@ -422,7 +423,7 @@ def archive_results(split_id, num_splits, header):
                     raise NotImplementedError("ARCHIVE_FORMAT 'parquet' without ARCHIVE_WITH_SHARD_GROUPING not yet implemented")
                 elif config['ARCHIVE_FORMAT'] == "custom":
                     logging.info(f"\nArchiving {len(output_files)} output files")
-                    
+
                     if False:  # Archive to a text file
                         with open(f"{results_loc}split-{split_id:03}@{num_splits}__archive.txt", 'w') as fin:
                             for output_file in output_files:
@@ -447,7 +448,7 @@ def archive_results(split_id, num_splits, header):
                             fout.write(str(file_index))
                 else:
                     raise ValueError(f"Illegal ARCHIVE_FORMAT: {config['ARCHIVE_FORMAT']}")
-    
+
                 for output_file in output_files:
                     os.remove(output_file)
         else:  # ARCHIVE_WITH_SHARD_GROUPING
@@ -476,7 +477,7 @@ def archive_results(split_id, num_splits, header):
                                 for output_file in output_files:
                                     logging.info(f"  Adding split shard file to tar: {output_file}")
                                     tar.add(output_file, arcname=os.path.basename(output_file))
-                                
+
                                 for output_file in output_files:
                                     os.remove(output_file)
                 elif "parquet" in config['ARCHIVE_FORMAT']:
@@ -495,7 +496,7 @@ def archive_results(split_id, num_splits, header):
                                 #     output_parquet_filename = os.path.basename(output_file).replace(".csv", ".parquet")
                                 #     df = pd.read_csv(output_file)
                                 #     df.to_parquet(f"{results_loc}{output_parquet_filename}", engine=config['PARQUET_ENGINE'])
-                            
+
                             # Produce one parquet file per shard worker (This is better. It groups all shards per shard worker into a single file.)
                             for output_file in output_files:
                                 if output_file.endswith(".csv"):
@@ -514,18 +515,18 @@ def archive_results(split_id, num_splits, header):
 
                             for output_file in output_files:
                                 os.remove(output_file)
-    
+
                     # SUCCESS
 
-                    if merged_df is not None:  
+                    if merged_df is not None:
                         # logging.info(f"merged_df['shard_hex'] type: {merged_df.dtypes['shard_hex']}")
                         merged_df['shard_hex'] = merged_df['shard_hex'].astype(str)
                         # logging.info(f"merged_df['shard_hex'] type: {merged_df.dtypes['shard_hex']}")
-    
+
                         # SUCCESS
-                        
+
                         merged_df.to_parquet(f"{results_loc}split-{split_id:03}@{num_splits}__shard_worker-{shard_worker_desc_file_hash}.parquet", engine=config['PARQUET_ENGINE'])
-    
+
                         # FAIL AND the aaa.txt file doesn't appear in the results/ so to_parquet() is hanging
                 elif config['ARCHIVE_FORMAT'] == "custom":
                     with open(f"{results_loc}split-{split_id:03}@{num_splits}__shard_worker-{shard_worker_desc_file_hash}__archive.txt", 'w') as fout:
@@ -546,9 +547,9 @@ def archive_results(split_id, num_splits, header):
                                     os.remove(output_file)
                 else:
                     raise ValueError(f"Illegal ARCHIVE_FORMAT: {config['ARCHIVE_FORMAT']}")
-    
+
     # FAIL
-    
+
     # We have to delete the empty directory so the results directory will look empty to force the placeholder file to be added
     shard_worker_dirs = sorted(list(glob.glob(f"{results_loc}shard_worker-*")))
     for shard_worker_dir in shard_worker_dirs:
@@ -585,7 +586,7 @@ def upload_results_to_bucket():
         t1 = default_timer()
         logging.info(f"External bucket upload elapsed time: {seconds_to_hms(t1 - st)}")
         timestamps.append(("upload_files_to_external_storage", t1))
-        
+
         logging.info("")
         for file in files_to_upload_to_scratch:
             # logging.info(f"Deleting result file after uploading to external bucket: {file}")
@@ -596,6 +597,7 @@ def upload_results_to_bucket():
         logging.info(f"\n{data_loc}PASS_DATA_BETWEEN_CAPSULES_METHOD indicates Code Ocean. Results won't be uploaded externally.")
 
 def test_aws_interactions():
+    # Make sure this subpipeline's config is loaded last so it can override any other config values
     config = read_config(["relation", "spatial", "id"])
     logging.basicConfig(stream=sys.stdout, level=get_logging_level_from_desc(config['LOGGING_LEVEL']), format=config['LOGGING_FORMAT'], force=True)
 
@@ -620,16 +622,17 @@ def test_aws_interactions():
     delete_folder_from_aws("subfolder/", config['AWS_BUCKET'], config['AWS_PROJECT_PATH'])
     # delete_folder_from_aws("test_folder/", config['AWS_BUCKET'], config['AWS_PROJECT_PATH'])
     query_folder_on_aws("subfolder/", config['AWS_BUCKET'], config['AWS_PROJECT_PATH'])
-    
+
     logging.info("\n\n" + "_" * 100 + "\nRESULTS")
     logging.info(f"\n../data/ contents: {'\n'.join(os.listdir('../data/'))}")
     logging.info(f"\n../data/aws_files contents: {'\n'.join(os.listdir('../data/aws_files'))}")
     shutil.copytree("../data/aws_files", "../results/aws_files")
 
 def test_aws_interactions2():
+    # Make sure this subpipeline's config is loaded last so it can override any other config values
     config = read_config(["relation", "spatial", "id"])
     logging.basicConfig(stream=sys.stdout, level=get_logging_level_from_desc(config['LOGGING_LEVEL']), format=config['LOGGING_FORMAT'], force=True)
-    
+
     delete_folder_from_aws2("subfolder/", config['AWS_BUCKET'], config['AWS_PROJECT_PATH'])
     delete_folder_from_aws2("emptyFolder/", config['AWS_BUCKET'], config['AWS_PROJECT_PATH'])
     delete_folder_from_aws2("subfolder/test_file2.txt", config['AWS_BUCKET'], config['AWS_PROJECT_PATH'])
@@ -644,12 +647,13 @@ if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.CRITICAL, format='%(message)s')
     logging.critical("_" * 100)
     logging.critical("BUILD ID INDEX")
-    
+
     analyze_memory_usage()
 
     data_loc = "../data/"
     results_loc = "../results/"
 
+    # Make sure this subpipeline's config is loaded last so it can override any other config values
     config = read_config(["relation", "spatial", "id"])
     logging.basicConfig(stream=sys.stdout, level=get_logging_level_from_desc(config['LOGGING_LEVEL']), format=config['LOGGING_FORMAT'], force=True)
 
@@ -659,7 +663,7 @@ if __name__ == "__main__":
     logging.getLogger('s3transfer').setLevel(logging.INFO)
     logging.getLogger('aws-cli').setLevel(logging.INFO)
     logging.getLogger('cloudfiles').setLevel(logging.INFO)
-    
+
     logging.getLogger('simple_writer_no_spatial_indexing').setLevel(
         get_logging_level_from_desc(config['PRECOMPUTED_FILE_WRITER_LOGGING_LEVEL']))
     logging.getLogger('sharding').setLevel(
@@ -696,6 +700,8 @@ if __name__ == "__main__":
 
         timestamps.append(("read shard worker descriptions", default_timer()))
 
+        split_id, num_splits, header = None, None, None
+
         # Detect an empty input directory or the presence of the no-op file, indicating that this capsule isn't being used in the current pipeline.
         data_loc_contents_set = set(data_loc_contents)
         if data_loc_contents_set == set(["job_config.py"]) \
@@ -716,12 +722,12 @@ if __name__ == "__main__":
             # shard_hexes = [shard_hex[1:-1] if shard_hex[0] == '"' else shard_hex for shard_hex in shard_hexes]
             shard_hexes = [shard_hex[1:] if shard_hex[0] == '_' else shard_hex for shard_hex in shard_hexes]
             # logging.info(f"Input all shard hexes: {shard_hexes}")
-        
+
         logging.info(f"\nNum duplicate ids: {num_dup_ids}")
-    
+
         analyze_memory_usage()
         timestamps.append(("process input file", default_timer()))
-        
+
         # COMMENTING OUT archive_results() SUCCESS
         archive_results(split_id, num_splits, header)
         analyze_memory_usage()
@@ -736,7 +742,7 @@ if __name__ == "__main__":
             logging.info("Copying config files to results for next capsule")
             for f in glob.glob(f"{data_loc}*config*.py"):
                 shutil.copy(f, f"{results_loc}{os.path.basename(f)}")
-        
+
         logging.error("\nElapsed timestamps:")
         accum_elapsed_times = Counter()
         for ti, time in enumerate(timestamps):
@@ -744,13 +750,13 @@ if __name__ == "__main__":
                 elap_t = time[1] - timestamps[ti-1][1]
                 accum_elapsed_times[time[0]] += elap_t
                 # logging.error(f"  {seconds_to_hms(elap_t)} {time[0]}")
-            
+
         logging.error("Accumulated elapsed timestamps:")
         for label, elap_t in accum_elapsed_times.items():
             logging.error(f"  {seconds_to_hms(elap_t)} {label}")
-    
+
     finalize_results(results_loc)
-    
+
     analyze_memory_usage()
 
 logging.info("\nDone")

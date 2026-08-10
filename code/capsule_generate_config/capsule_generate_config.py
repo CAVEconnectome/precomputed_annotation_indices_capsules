@@ -21,7 +21,7 @@ config = {
     # "DATA_SOURCE_NAME": "synapses_pni_2_v1_filtered_view__test5",
     # "DATA_SOURCE_NAME": "synapses_pni_2_v1_filtered_view__test6",
     # "DATA_SOURCE_NAME": "synapses_pni_2_v1_filtered_view",
-    
+
     # Describe how the input data is split, i.e., the number of lines/rows chunked together during splitting.
     # The resulting row-assignment indicates how many lines/rows will be processed by each split worker.
     # A positive value prescribes a split size in number of rows.
@@ -44,9 +44,6 @@ config = {
     "NUM_SHARD_WORKERS": 32,  # If the number of shards exceeds this value, multiple shards will be processed by a single shard worker
     "MINISHARD_TARGET_COUNT": 1000,  # Default 1000
     "SHARD_TARGET_SIZE": 50000000,  # Default 50000000
- 
-    # Assign this to some arbitary random number to force Code Ocean to reprocess the file instead of using a previously cached run
-    "FORCE_NO_CACHE": 345434,
 
     # If there are billing or other concerns with data transfer outside of Code Ocean,
     # you have the option of not uploading the results to a Google bucket.
@@ -61,6 +58,9 @@ config = {
     # The three dots only appear when you hover over the total size, which then transforms into a three-dot menu option.
     "UPLOAD_RESULTS_TO_GCP": True,
 
+    # Although these values may seem troublesome as hard-coded values,
+    # they can be overridden at runtime via Code Ocean App Panel parameters.
+    # TODO: Develop a cleaner configuration system.
     "GCP_BUCKET": "keith-dev",
     "GCP_SCRATCH_BLOB_PATH": "ng_precomputed_annotations_pipeline_scratch",
     "GCP_RESULTS_BLOB_PATH": "ng_precomputed_annotations_unreleased",
@@ -111,13 +111,13 @@ if __name__ == "__main__":
     logging.info('  ' + '\n  '.join(sorted(os.listdir(data_loc))).strip() + '\n')
 
     config = add_timestamp_and_uri_to_config(config)
-    
+
     # Read the description of the data for the run from a separate JSON file.
     # This description differs conceptually from configuring how the pipeline operates, which is indicated in the dictionary provided at the top of this source file.
     # Note that the DATA_SIZE configuration parameter has been left in the dictionary instead of the JSON file
     # because it can be modified more quickly and frequently (for development) from the code (in this file) than from the JSON file (which would require altering the Code Ocean data source, which is incredibly tedious).
     # This has been moved to an App Builder runtime parameter
-    
+
     # data_config_filename = "data_config.json"
     # data_config_filename = "spine_info_sample_bigger__data-config.json"
     # data_config_filename = "synapses_pni_2_v1_filtered_view__v1412__data-config.json"
@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
     # if not os.path.exists(f"{data_loc}{data_config_filename}"):
     #     data_config_filename = args.data_config_filename
-    
+
     # if os.path.exists(f"{data_loc}{data_config_filename}"):
     #     with open(f"{data_loc}{data_config_filename}") as f:
     #         data_config = json.load(f)
@@ -174,7 +174,7 @@ if __name__ == "__main__":
         # config['DATA_CONFIG']['id_column_added'] = id_column_name_w_suffix
         config['DATA_CONFIG']['columns'] = [id_column_name_w_suffix] + config['DATA_CONFIG']['columns']
         logging.info(f"Added ID column since one wasn't configured: {id_column_name_w_suffix}\n")
-    
+
     # Calculate the split size for the indicated data source using the configured SPLIT_DESC add the corresponding 'data_size' key.
     if args.data_source_name is not None and \
         args.data_source_name.lower() not in ["", " ", "na", "none", "unspecified"]:
@@ -202,7 +202,7 @@ if __name__ == "__main__":
         logging.info("DATA_CONFIG:data_sizes iteration complete")
         if 'data_size' not in config['DATA_CONFIG']:
             raise ValueError("'data_size' not added to DATA_CONFIG. Are you sure the correct 'data_sizes' key was passed in?")
-    
+
         # Add the data_source_name arg to the config so the splitters can confirm that it matches the input file
         config['DATA_CONFIG']['data_source_name'] = args.data_source_name
     else:
@@ -225,7 +225,7 @@ if __name__ == "__main__":
             split_size = math.ceil(largest_dataset[2] / num_splits)
             logging.info(f"For the configured data size of {largest_dataset[2]:,} and configured num_splits of {-config['SPLIT_DESC']}, split_size has been calculated to be {split_size:,}.")
         config['DATA_CONFIG']['data_size'] = largest_dataset + [split_size, num_splits]
- 
+
     # Process the subsplits
     if config['SUBSPLIT_DESC'] > 0:
         # Subsplits are configured by split size
@@ -256,7 +256,7 @@ if __name__ == "__main__":
             if prop_info['type'] not in PROPERTY_ENUMABLE_TYPES:
                 raise ValueError("Property includes enum description with non-enumable type.")
             # Add an enum for missing data
-            for i in range(-1, -1000, -1):
+            for i in range(-1, -1000000, -1):
                 if i not in prop_info['enum_values']:
                     prop_info['enum_values'].append(i)
                     prop_info['enum_labels'].append("NULL")
@@ -268,7 +268,7 @@ if __name__ == "__main__":
             prop_info['enum_values'] = None
             prop_info['enum_labels'] = None
     # logging.info(f"Properties: {config['DATA_CONFIG']['properties']}")
-    
+
     # logging.info("\nConfig:")
     # for key, val in config.items():
     #     if key != 'DATA_CONFIG':
@@ -276,7 +276,7 @@ if __name__ == "__main__":
     #     else:
     #         logging.info(f"  {key}: {json.dumps(config['DATA_CONFIG'], indent=2)}")
     # logging.info("\n")
-    
+
     with open(f"{results_loc}job_config.py", 'w') as f:
         # f.write("{\n")
         # for k, v in config.items():
@@ -284,7 +284,7 @@ if __name__ == "__main__":
         # f.write("}\n")
         f.write(pprint.pformat(config) + '\n')#.replace('{', "{\n ").replace('}', "\n}"))
         # f.write(json.dumps(config, indent=2) + "\n")  # Can't be read by ast.literal(), only json.load()/loads()
-    
+
     analyze_memory_usage()
 
 logging.info("\nDone")

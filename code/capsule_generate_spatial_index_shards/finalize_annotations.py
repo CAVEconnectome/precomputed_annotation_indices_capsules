@@ -13,7 +13,7 @@ import shutil
 import tarfile
 
 from shared.google_storage import *
- 
+
 import shared.simple_writer_no_spatial_indexing as simple_writer_no_spatial_indexing
 import shared.annotations as anno
 import shared.sharding as sharding
@@ -92,7 +92,7 @@ def download_data_from_bucket(shard_worker_desc_file_hash):
             data_loc_contents = [v for v in data_loc_contents if "placeholder" not in v]
             logging.info(f"\n{data_loc} contents ({len(data_loc_contents)}) (first 30 shown):")
             logging.info('  ' + '\n  '.join(data_loc_contents[:30]).strip() + '\n')
-            
+
             timestamps.append(("download_files_from_external_storage", default_timer()))
         else:
             logging.info(f"\n{data_loc}PASS_DATA_BETWEEN_CAPSULES_METHOD indicates Code Ocean. Results won't be downloaded from external bucket.")
@@ -110,7 +110,7 @@ def save_shard_data_as_csv(table, header_str, subdir, tree_level, shard_hex):
         with open(filepath, 'w') as f:
             f.write(header_str + '\n')
             f.write(table)
-    
+
     # timestamps.append(("save_shard_data_as_csv() bottom", default_timer()))
 
 def get_shard_hex(tree_level, tree_level_cell_id, verbose=False):
@@ -129,7 +129,7 @@ def get_shard_hex(tree_level, tree_level_cell_id, verbose=False):
     shard_hex = sharding.get_shard_hex(shard_num, config['TREE_LEVEL_SHARDING_SPECS'][tree_level]['shard_bits'])
     if verbose:
         logging.info(f"get_shard_hex({tree_level}, {tree_level_cell_id}) -> mc {morton_code}, shard_num {shard_num}, shard_hex {shard_hex}")
-    
+
     return shard_hex
 
 def confirm_point_annotation_location_treecellid_shard(point_annotation, tree_level, cell_bounds_low, cell_bounds_high, file_shard_hex):
@@ -245,18 +245,18 @@ def convert_relation_fields(relation_fields):
             if not isinstance(relation_val, int):
                 relation_val = convert_non_int_relation_via_enum_property(relation_val, relationship_column_name)
             relation_fields_out[lbl].append(relation_val)
-        
+
         # # Casting a float to an int won't raise an exception. We have to check for a float explicitly.
         # if '.' in relation_field_str:
         #     raise ValueError(f"Relation field must be int or list of ints: {relation_field_str}")
-        
+
         # try:
         #     # Try casting the field as an int (we have already established it isn't a float above)
         #     relation_field = int(relation_field_str)
         # except:
         #     try:
         #         relation_field_str = str(convert_non_int_relation_via_enum_property(relation_field_str, col))
-                
+
         #         # Try casting the field as a list (we have already established it isn't a float above)
         #         if relation_field_str[0] != '[':
         #             relation_field_str = '[' + relation_field_str
@@ -265,16 +265,16 @@ def convert_relation_fields(relation_fields):
         #         relation_field = ast.literal_eval(relation_field_str)
         #         if not isinstance(relation_field, list):
         #             raise ValueError(f"Relation field must be int or list of ints: {relation_field_str}")
-                
+
         #         # Ensure that every item in the list is an int
         #         for v in relation_field:
         #             if not isinstance(v, int):
         #                 raise ValueError(f"Relation field must be int or list of ints: {relation_field_str}")
         #     except:
         #         raise ValueError(f"Relation field must be int or list of ints: {relation_field_str}")
-        
+
         # relation_fields_out[col] = relation_field
-    
+
     return relation_fields_out
 
 def calculate_annotation_vector(points):
@@ -298,7 +298,7 @@ def calculate_annotation_vector(points):
 def build_annotation_description_from_row_tuple__one_annotation_per_row__multiple_points_per_row(row, columns, pt_positions, data_property_by_col_idx, data_relation_by_col_idx):
     relation_fields = {col: (col, row[col_idx]) for col, col_idx in data_relation_by_col_idx.items()}
     relation_fields = convert_relation_fields(relation_fields)
-    
+
     id_column = config['DATA_CONFIG']['id_column']
     # logging.info(f"id_column: {id_column}")
     if id_column is not None:
@@ -307,7 +307,7 @@ def build_annotation_description_from_row_tuple__one_annotation_per_row__multipl
         id_column_idx = 0
         logging.info(f"id_column is NULL, so it will be inferred from the split id and row idx, and inserted into the corresponding id column: {columns[0]}.")
     logging.info(f"id_column_idx: {id_column_idx}")
-    
+
     desc = {
         "id": row[id_column_idx],
         "treecell_index": row[treecell_index],  # [int(v) for v in row.treecell_index.split('_')],
@@ -347,7 +347,7 @@ def build_annotation_description_from_row_tuple__one_annotation_per_row__multipl
             desc["properties"][prop_id] = enum_value
         else:
             desc["properties"][prop_id] = field
-        
+
         if debug:
             logging.info(f"Anno prop: {desc['properties'][prop_id]}")
 
@@ -358,21 +358,21 @@ def build_annotation_description_from_row_tuple__one_annotation_per_row__multipl
         desc["end"] = pt_positions[config['DATA_CONFIG']["line_annotation_config"]["end_pt_column_label"]]
     elif 'polyline_annotation_config' in config['DATA_CONFIG']:
         raise RuntimeError("Not implemented yet")
-    
+
     # logging.info(f"Annotation description: {desc}")
-    
+
     return desc
 
 def build_annotation_description_from_str__one_annotation_per_row__multiple_points_per_row(id_, pt_positions, treecell_index, properties, relation_fields):
     relation_fields = convert_relation_fields(relation_fields)
-    
+
     desc = {
         "id": id_,
         "treecell_index": treecell_index,
         "properties": properties,
         "relations": relation_fields,
     }
-    
+
     if 'point_annotation_config' in config['DATA_CONFIG']:
         desc["position"] = pt_positions[config['DATA_CONFIG']["point_annotation_config"]["pt_column_label"]]
     elif 'line_annotation_config' in config['DATA_CONFIG']:
@@ -380,9 +380,9 @@ def build_annotation_description_from_str__one_annotation_per_row__multiple_poin
         desc["end"] = pt_positions[config['DATA_CONFIG']["line_annotation_config"]["end_pt_column_label"]]
     elif 'polyline_annotation_config' in config['DATA_CONFIG']:
         desc["points"] = list(pt_positions.values())
-    
+
     # logging.info(f"Annotation description: {desc}")
-    
+
     return desc
 
 def build_annotation(annotation_description):
@@ -450,7 +450,7 @@ def save_annotations_as_precomputed(table, columns, cell_bounds_low, cell_bounds
     timestamps.append(("save_annotations_as_precomputed() top", default_timer()))
 
     spatial_pt_columns = config['DATA_CONFIG']['spatial_pt_columns']
-    
+
     # I believe we don't care about size-restricting shard files. We are presuming the size-restrictions on the tree cells properly restrict the resulting shard files.
     # So, we don't need the following test, but I'm leaving in place for now, for clarity of the circumstance the test represents (keeping files to a reasonable size).
     # if isinstance(table, pd.DataFrame):
@@ -485,7 +485,7 @@ def save_annotations_as_precomputed(table, columns, cell_bounds_low, cell_bounds
 
         relation_col_indices = {k: (v['id'], columns.index(v['id'])) for k, v in data_relations.items()}
         treecell_index_col_idx = columns.index('treecell_index')
-        
+
         if config['DATA_CONFIG']['structure'] == 'one_annotation_per_row__multiple_points_per_row':
             assert isinstance(spatial_pt_columns, dict)
 
@@ -498,7 +498,7 @@ def save_annotations_as_precomputed(table, columns, cell_bounds_low, cell_bounds
                 ]
         elif config['DATA_CONFIG']['structure'] == "one_annotation_per_row__multiple_points_per_row_in_one_field":
             assert spatial_pt_columns == "single_field_list"
-        
+
         col_index_map = {col_name: i for i, col_name in enumerate(columns)}
 
         lines = table.strip().split('\n')
@@ -519,8 +519,8 @@ def save_annotations_as_precomputed(table, columns, cell_bounds_low, cell_bounds
                     id_ = int(fields[id_column_idx])
                 except ValueError as e:
                     logging.info(f"CCC {e}\n{line}\n")
-                
-                
+
+
                 if isinstance(spatial_pt_columns, dict):
                     pt_positions = {
                         pt_desc: [float(fields[pt_x_col_idx]), float(fields[pt_y_col_idx]), float(fields[pt_z_col_idx])] \
@@ -567,25 +567,25 @@ def save_annotations_as_precomputed(table, columns, cell_bounds_low, cell_bounds
                         properties[prop_id] = enum_value
                     else:
                         properties[prop_id] = field
-                    
+
                 relation_fields = {k: (c, fields[v]) for k, (c, v) in relation_col_indices.items()}
                 # logging.info(f"relation_fields: {relation_fields}")
                 # The following annotation description is specific to LineAnnotations.
                 # TODO: Generalize or dynimcally build or polymorphically populate other annotation types here.
                 annotation_desc = build_annotation_description_from_str__one_annotation_per_row__multiple_points_per_row(id_, pt_positions, treecell_index, properties, relation_fields)
                 annotation_descriptions.append(annotation_desc)
-        
+
         logging.info(f"treecell_index_counts (top 5): {treecell_index_counts.most_common(5)}")
 
     logging.info(f"Num gathered merged annotation_descriptions: {len(annotation_descriptions)}")
 
     if len(annotation_descriptions) != len(lines):
         raise ValueError(f"Num gathered annotations != num merged lines of input: {len(annotation_descriptions)} != {len(lines)}")
-    
+
     timestamps.append(("gather annotation_descriptions from table", default_timer()))
-    
+
     writer = simple_writer_no_spatial_indexing.SimpleWriter("LINE", dimensions, cell_bounds_low, cell_bounds_high, tree_level)
-    
+
     # writer.by_id_sharding = anno.ShardingSpec(hash=config['ID_SHARDING_HASH'], preshift_bits=config['ID_PRESHIFT_BITS'], shard_bits=config['ID_SHARDING_BITS'], minishard_bits=config['ID_MINISHARDING_BITS'])
 
     bounds_range = [cell_bounds_high[d] - cell_bounds_low[d] for d in range(3)]
@@ -646,9 +646,9 @@ def save_annotations_as_precomputed(table, columns, cell_bounds_low, cell_bounds
     # Define relationships (yes, spatial indexing needs this)
     for relation, column_name in data_relations.items():
         writer.relationships.append(anno.Relationship(relation, sharding=anno.ShardingSpec()))
-    
+
     timestamps.append(("init writer", default_timer()))
-    
+
     for i, annotation_description in enumerate(annotation_descriptions):
         # The confirmation performed here probably slows this process down significantly. Remove it once correct behavior is confirmed.
         if 'point_annotation_config' in config['DATA_CONFIG']:
@@ -661,7 +661,7 @@ def save_annotations_as_precomputed(table, columns, cell_bounds_low, cell_bounds
         annotation = build_annotation(annotation_description)
         if i < 3:
             logging.info(f"Annotation {i:10}: {annotation}")
-        
+
         # QUESTION: When I had a bug that always wrote the first cell index into all chunks of the shard file, why didn't sharding.py:write_shard_file():"if expected_shard != shard_number:" not trigger an exception? I'm trying to force it back to that erroneous state here by hardcoding a single cell index in for all chunks in the shard file, and as before, I'm not seeing that exception arise, but why not?!
         if debug2 and annotation_description['treecell_index'] is not None and annotation_description['treecell_index'] != "0_0_0":
             logging.info(f"Overriding cell index {annotation_description['treecell_index']} -> 0,0,0, shard {get_shard_hex(tree_level, [int(v) for v in annotation_description['treecell_index'].split('_')])} -> {get_shard_hex(tree_level, [0, 0, 0])}")
@@ -670,7 +670,7 @@ def save_annotations_as_precomputed(table, columns, cell_bounds_low, cell_bounds
             # assert annotation_description["treecell_index"] == "0_0_0"
             # logging.info(f"Adding line annotation {i} {treecell_index} to writer's cell annotations list")
             writer.cell_annotations[annotation_description["treecell_index"]].append(annotation)
-    
+
     for tci_i, treecell_index in enumerate(writer.cell_annotations):
         if tci_i >= 3:
             break
@@ -679,7 +679,7 @@ def save_annotations_as_precomputed(table, columns, cell_bounds_low, cell_bounds
     # DEBUG
     # for i, annotation in enumerate(writer.cell_annotations[annotation_description["treecell_index"]]):
     #     logging.info(f"Writer cell annotation {i}: {annotation.id} {annotation.start} {annotation.end}")
-    
+
     timestamps.append(("append annotation_descriptions to writer", default_timer()))
 
     return writer, len(annotation_descriptions)
@@ -692,13 +692,13 @@ def save_shard_data_as_precomputed(table, columns, cell_bounds_low, cell_bounds_
 
     logging.info("\n" + "=" * 100 + "\n")
     logging.info(f"Writing this cell's precomputed file to: {results_loc + subdir}")
-    
+
     # Joe's original code would write a precomputed file in a series of numerous small file write operations.
     # The following parameter offers the option of generating the entire precomputed file via
     # write operations to a memory buffer first, and then dumping the entire buffer to disk in a single
     # disk I/O operation, which I theorized and hoped would be faster.
     # Testing suggests that this approach works spectacularly, but I leave it as an optional
-    # parameter for future comparison and validation. 
+    # parameter for future comparison and validation.
     USE_RAM_BUFFER = True
     logging.info(f"USE_RAM_BUFFER: {USE_RAM_BUFFER}")
 
@@ -714,7 +714,7 @@ def save_shard_data_as_precomputed(table, columns, cell_bounds_low, cell_bounds_
     # elif isinstance(table, str):
     #     col_index_map = {col_name: i for i, col_name in enumerate(columns)}
     col_index_map = {col_name: i for i, col_name in enumerate(columns)}
-    
+
     data_properties = config['DATA_CONFIG']['properties']
     data_properties_cols = [v['id'] for k, v in data_properties.items()]
     data_property_by_col_idx = {col: col_index_map[col] if col else None for col in data_properties_cols}
@@ -744,14 +744,14 @@ def save_shard_data_as_precomputed(table, columns, cell_bounds_low, cell_bounds_
         # logging.info(f"  filepath: {filepath}")
         filepath = os.path.expanduser(filepath)
         logging.info(f"  filepath: {filepath}")
-    
+
         timestamps.append(("prepare precomputed writer filepath", default_timer()))
-        
+
         file_buffer = io.BytesIO()
         with file_buffer as f_buf:
             writer.writef(f_buf, shard_number=int(shard_hex, 16))  # Remove 'shard_num' param to disable some debugging/validation tests
             timestamps.append(("write precomputed to buffer", default_timer()))
-            
+
             with open(filepath, "wb") as f_disk:
                 f_disk.write(file_buffer.getbuffer())
             timestamps.append(("write precomputed buffer to file", default_timer()))
@@ -772,7 +772,7 @@ def save_shard_data_as_precomputed(table, columns, cell_bounds_low, cell_bounds_
                     if debug:
                         logging.info(f"Deleting non-spatial-index dir: {dir_}")
                     shutil.rmtree(dir_)
-        
+
         # Remove the extraneous files and validate the target file
         spatial_shard_files = list(glob.glob(f"{results_loc}{subdir}spatial{tree_level}/*.shard"))
         if debug:
@@ -809,7 +809,7 @@ def parse_treelevel_shard_file_by_treecellid(treelevel_shard_file):
             if line_i < 5:
                 logging.info(f"Line {line_i} (first 5 shown) treecellid: {treecellid}")
             per_treecellid_lines[treecellid].append(line)
-    
+
     logging.info(f"All tree level cell ids: {per_treecellid_lines.keys()}")
 
     return per_treecellid_lines
@@ -826,19 +826,19 @@ def process_treelevel_shard_file(treelevel_shard_file, tree_level, MERGE_FORMAT,
     for tree_level_cell_id_str, treecellid_lines in per_treecellid_lines.items():
         tree_level_cell_id = [int(v) for v in tree_level_cell_id_str.split('_')]
         logging.info(f"  Tree level cell id: {tree_level_cell_id_str} {tree_level_cell_id}")
-        
+
         if debug:
             grid_dim = 2 ** tree_level
             grid_shape = (grid_dim, grid_dim, grid_dim)
             morton_code = utilities.compressed_morton_code(tree_level_cell_id, grid_shape)
             logging.info(f"  Tree level cell id Morton code: {morton_code}")
-        
+
         # Only used by MERGE_FORMAT == "str_join"
         files_contents = []
 
         for shard_csv in shard_csvs:
             timestamps.append(("shard_csv_loop_top", default_timer()))
-            
+
             # logging.info(f"  Shard CSV size {os.path.getsize(shard_csv)}B")
             timestamps.append(("shard_csv_loop (get csv size)", default_timer()))
 
@@ -849,11 +849,11 @@ def process_treelevel_shard_file(treelevel_shard_file, tree_level, MERGE_FORMAT,
                     file_content = f.read()
                 # logging.info(f"    One shard len: {len(file_content)} B from file of size {os.path.getsize(shard_csv)} B")
                 timestamps.append(("shard_csv_loop (read csv)", default_timer()))
-                
+
                 # if file_content[-1] != '\n':
                 #     file_content += '\n'
                 # timestamps.append(("shard_csv_loop (append endline)", default_timer()))
-                
+
                 file_content_lines = file_content.split('\n')
                 file_content_lines2 = []
                 for file_content_line in file_content_lines:
@@ -871,7 +871,7 @@ def process_treelevel_shard_file(treelevel_shard_file, tree_level, MERGE_FORMAT,
                 elif MERGE_FORMAT == "str_join":
                     files_contents.append(file_content)
                     timestamps.append(("shard_csv_loop (stash content)", default_timer()))
-            
+
             timestamps.append(("shard_csv_loop_bottom (merge tables)", default_timer()))
 
             if MERGE_FORMAT == "str_join":
@@ -920,10 +920,10 @@ def process_treelevel_shard_dirs(shard_dirs):
         logging.info("Only the first 5 subdirs will be logged...")
 
         timestamps.append(("shard_dir_loop_init", default_timer()))
-        
+
         # for treelevel_shard_files_i, treelevel_shard_file in enumerate(treelevel_shard_files):
         #     merged_tables = process_treelevel_shard_file(treelevel_shard_file, tree_level, MERGE_FORMAT, columns, merged_table, treelevel_shard_files_i < 5)
-        
+
         # if MERGE_FORMAT == "dataframe":
         #     logging.info(f"Merged shard len: {len(merged_table)}")
         #     summed_dfs_len += len(merged_table)
@@ -949,7 +949,7 @@ def process_treelevel_shard_dirs(shard_dirs):
         os.makedirs(f"{results_loc}{subdir}", exist_ok=True)
         # num_annotations = save_shard_data_as_precomputed(merged_table, columns, cell_bounds_low, cell_bounds_high, subdir, tree_level, shard_hex, shard_dir_i==0)
         # num_annotations_all_shard_dirs += num_annotations
-    
+
         for treelevel_shard_files_i, treelevel_shard_file in enumerate(treelevel_shard_files):
             logging.info(f"Reading treelevel shard file {treelevel_shard_file} with size {os.path.getsize(treelevel_shard_file):,} B")
             with open(treelevel_shard_file) as f:
@@ -958,7 +958,7 @@ def process_treelevel_shard_dirs(shard_dirs):
             # logging.info(f"\nTreelevel shard file content (last 500 chars of {len(file_contents):,}):\n{file_contents[-500:]}")
             num_annotations = save_shard_data_as_precomputed(file_contents, columns, cell_bounds_low, cell_bounds_high, subdir, tree_level, shard_hex, shard_dir_i==0 and treelevel_shard_files_i==0)
             num_annotations_all_shard_dirs += num_annotations
-        
+
         logging.info(f"\nTotal num annotations written: {num_annotations_all_shard_dirs}")
 
         timestamps.append(("save_precomputed", default_timer()))
@@ -968,7 +968,7 @@ def process_treelevel_shard_dirs(shard_dirs):
             save_shard_data_as_csv(merged_table, header_str, subdir_csv, tree_level, shard_hex)
 
         timestamps.append(("save_csv", default_timer()))
-        
+
         # if subdir:
         #     shutil.rmtree(f"{results_loc}{subdir}")
 
@@ -986,21 +986,21 @@ def process_treelevel_shard_dirs(shard_dirs):
         logging.info(f"\nSummed total num data rows: {summed_dfs_len}")
     elif MERGE_FORMAT == "str_sum" or MERGE_FORMAT == "str_join":
         logging.info(f"\nSummed total data size: {summed_csvstrs_len/1000000}M")
-    
+
     logging.info("\n" + "#" * 100 + "\n")
 
 def main():
     """
     RECEIVE INPUT WITH THE FOLLOWING LAYOUT:
- 
+
     ../data/ contents:
         job_config.py
         treelevel-04_shard-1
         treelevel-04_shard-2
         treelevel-04_shard-3
- 
+
     PRODUCE OUTPUT WITH THE FOLLOWING LAYOUT:
- 
+
     ../results/ contents:
         treelevel-04_shard-1/synapses_one_shard__treelevel-04__shard-1.csv
         treelevel-04_shard-2/synapses_one_shard__treelevel-04__shard-2.csv
@@ -1020,7 +1020,7 @@ def main():
     upstream_log = upstream_log[0]
     logging_uid = upstream_log.split('_')[-1].split('.')[0]
     # os.makedirs(f"{results_loc}logs/", exist_ok=True)
-    
+
     logging.basicConfig(level=logging.CRITICAL, handlers=[
             logging.StreamHandler(sys.stdout),
             logging.FileHandler(f"{results_loc}log_conglomerate_spatial_index_by_shard_{logging_uid}.log", mode="a")
@@ -1028,6 +1028,7 @@ def main():
     logging.critical("_" * 100)
     logging.critical("CONGLOMERATE SPATIAL INDEX BY SHARD")
 
+    # Make sure this subpipeline's config is loaded last so it can override any other config values
     config = read_config(["id", "relation", "spatial"])
     logging.basicConfig(level=get_logging_level_from_desc(config['LOGGING_LEVEL']), handlers=[
             logging.StreamHandler(sys.stdout),
@@ -1038,28 +1039,28 @@ def main():
         logging.getLogger(module).setLevel(get_logging_level_from_desc(config['PRECOMPUTED_FILE_WRITER_LOGGING_LEVEL']))
         logging.getLogger(module).addHandler(logging.StreamHandler(sys.stdout))
         logging.getLogger(module).addHandler(logging.FileHandler(f"{results_loc}log_conglomerate_spatial_index_by_shard_{logging_uid}.log", mode="a"))
-    
+
     # Pick one: changing this requires altering the pipeline topology
     # OUTPUT_STYLE = "capsule"  # Pipeline must connect this capsule to the 'reorganize directory structure' capsule with 'Collect' type
     # OUTPUT_STYLE = "results"  # Pipeline must connect this capsule to the 'results'
     # OUTPUT_STYLE = "results_for_ng"  # Pipeline must connect this capsule to the 'results'. The resulting layout will drop into place for Neuroglancer without any further moving around.
-    
+
     timestamps = []
     timestamps.append(("start", default_timer()))
 
     missing_enum_labels = set()
-    
+
     if config['SPATIAL_INDEX_ENABLED']:
         max_data_rows_per_tree_cell = config['MAX_DATA_ROWS_PER_TREE_CELL']
- 
+
         dimensions = config['DATA_CONFIG']['dimensions']
         dimensions_lst = [v[0] for v in dimensions.values()]
- 
+
         data_loc_contents = sorted(os.listdir(data_loc))
         data_loc_contents = [v for v in data_loc_contents if "placeholder" not in v]
         logging.info(f"{data_loc} contents ({len(data_loc_contents)}) (first 30 shown):")
         logging.info('  ' + '\n  '.join(data_loc_contents[:30]).strip() + '\n')
-        
+
         timestamps.append(("init", default_timer()))
 
         shard_worker_desc_file_hash, assigned_shards = read_shardworker_file()
@@ -1071,7 +1072,7 @@ def main():
         #     for log in logs:
         #         logging.info(f"Copying log from {data_loc} to {results_loc}: {log}")
         #         shutil.copy(log, f"{results_loc}{os.path.basename(log)}")
-        
+
         # We don't need to download the results from a bucket or dearchive them if we are running the conglomerator right here in this capsule immediately after running the regrouped/combiner.
         # download_data_from_bucket(shard_worker_desc_file_hash)
 
@@ -1085,7 +1086,7 @@ def main():
         #         tar.extractall(path=f"{data_loc}")
         #     os.remove(tared_file)
         # logging.info(f"{data_loc} contents after extraction ({len(os.listdir(data_loc))}) (first 50 shown):\n  {'\n  '.join(sorted(os.listdir(data_loc))[:50]).strip()}\n")
-        
+
         # timestamps.append(("extract_input_files", default_timer()))
 
         treelevel_shard_dirs = sorted(glob.glob(f"{data_loc}treelevel-*__shard-*"))
@@ -1097,7 +1098,7 @@ def main():
         logging.info(f"Shard subdirectories (first 50 shown):\n  {'\n  '.join(sorted(treelevel_shard_subdirs)[:50]).strip()}\n")
 
         timestamps.append(("prep_treelevel_shard_dirs", default_timer()))
- 
+
         process_treelevel_shard_dirs(treelevel_shard_dirs)
 
         if not os.path.exists(f"{data_loc}DEBUG_FLAG.txt"):
@@ -1136,14 +1137,14 @@ def main():
                     for spatial_dir in spatial_dirs:
                         os.rename(f"{results_loc}{spatial_dir}", f"{results_loc}{spatial_dir}__shard_worker-{shard_worker_desc_file_hash}")
                     timestamps.append(("rename results", default_timer()))
-    
+
     if missing_enum_labels:
         logging.error(f"Missing enum labels: {missing_enum_labels}")
         raise ValueError(f"Missing enum labels: {missing_enum_labels}")
 
     finalize_results(results_loc)
     timestamps.append(("finalize_results", default_timer()))
-    
+
     # logging.error("\nElapsed timestamps:")
     accum_elapsed_times = Counter()
     for ti, time in enumerate(timestamps):
@@ -1151,13 +1152,13 @@ def main():
             elap_t = time[1] - timestamps[ti-1][1]
             accum_elapsed_times[time[0]] += elap_t
             # logging.error(f"  {seconds_to_hms(elap_t)} {time[0]}")
-        
+
     logging.error("Accumulated elapsed timestamps:")
     for label, elap_t in accum_elapsed_times.items():
         logging.error(f"  {seconds_to_hms(elap_t)} {label}")
 
 if __name__ == "__main__":
     main()
- 
+
 logging.info("\nDone")
 process_running_time()

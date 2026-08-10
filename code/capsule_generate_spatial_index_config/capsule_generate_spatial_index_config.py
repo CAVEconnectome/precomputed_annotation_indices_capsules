@@ -15,7 +15,7 @@ spatial_config = {
     "PRECOMPUTED_FILE_WRITER_LOGGING_LEVEL": "info",
 
     "PROFILING_ENABLED": False,
-    
+
     "SPATIAL_INDEX_ENABLED": True,
     "SPATIAL_INDEX_UNSHARDED_ENABLED": False,  # The capsule that performs this has not been maintained. It will require development to turn this back on.
 
@@ -23,7 +23,7 @@ spatial_config = {
     "DEFAULT_SPATIAL_PRESHIFT_BITS": 0,
     "DEFAULT_SPATIAL_SHARDING_BITS": None,  # 3,  # Set to None to autogenerate the sharding spec
     "DEFAULT_SPATIAL_MINISHARDING_BITS": 0,
-    
+
     # Similar to NUM_ROOT_ID_WORKERS but for a different pipeline.
     # Setting this to the max value of 8 effectively disables its utility as a conglomerator of tree outputs into a smaller number of workers, since each subtree at every level will to a new Code Ocean capsule.
     # Setting this to a value 2 <= OCT_TREE_FAN_OUT_DEGREE <= 7 will collapse the 8X fan out of tree children into OCT_TREE_FAN_OUT_DEGREE worker capsules in the next link of the daisy-chain.
@@ -72,7 +72,7 @@ spatial_config = {
     # Therefore, the detriment of increasing the file size by maintaining shard separation is compensated by the benefit of saving the
     # regrouping capsule that extraneous work.
     "ARCHIVE_COMPLETED_TREECELLS_WITH_SHARD_GROUPING": True,
- 
+
     # This parameter instructs some sequential pairs of capsules to send/receive data
     # by uploading the data to a cloud location (GCP or S3) and download it from there,
     # instead of letting Code Ocean pass the data directly.
@@ -88,9 +88,6 @@ spatial_config = {
     # In addition to generating the binary precomputed shard files required by NG (the primary output of this capsule and pipeline),
     # the option is saving the same output as human-readable CSV is supported, at obvious costs of storage and some additional processing time.
     "SAVE_CSV": False,
- 
-    # Assign this to some arbitary random number to force Code Ocean to reprocess the file instead of using a previously cached run
-    "FORCE_NO_CACHE": 345434,
 
     "HIGHEST_SPLIT_ID": None,
 }
@@ -103,6 +100,7 @@ if __name__ == "__main__":
     data_loc = "../data/"
     results_loc = "../results/"
 
+    # Make sure this subpipeline's config is loaded last so it can override any other config values
     config = read_config(["id", "relation", "spatial"])
 
     # Enact any overrides
@@ -130,13 +128,13 @@ if __name__ == "__main__":
         spatial_config['TREE_LEVEL_SHARDING_SPECS'] = [None] * spatial_config['MAX_NUM_TREE_LEVELS']
         for tree_level in range(spatial_config['MAX_NUM_TREE_LEVELS']):
             logging.critical("\n" + "_" * 100)
-            
+
             # tree_level_sharding_spec = generate_spatial_index_sharding_spec(
             #     tree_level,
             #     spatial_config['MAX_DATA_ROWS_PER_TREE_CELL'],
             #     config['DATA_CONFIG']['data_size'],
             # )
-            
+
             tree_level_sharding_spec = generate_spatial_index_sharding_spec_2(
                 tree_level,
                 spatial_config['MAX_DATA_ROWS_PER_TREE_CELL'],
@@ -147,7 +145,7 @@ if __name__ == "__main__":
             )
 
             spatial_config['TREE_LEVEL_SHARDING_SPECS'][tree_level] = tree_level_sharding_spec
-        
+
             # if spatial_config['TREE_LEVEL_SHARDING_SPECS'][tree_level]['preshift_bits'] != 0:
             #     raise ValueError("Indexing doesn't support sharding specs with preshift-bits other than 0. The resulting index won't work in Neuroglancer. I have no idea what's wrong at the current time.")
     else:
@@ -160,10 +158,10 @@ if __name__ == "__main__":
                 "shard_bits":     spatial_config["DEFAULT_SPATIAL_SHARDING_BITS"],
                 "minishard_bits": spatial_config["DEFAULT_SPATIAL_MINISHARDING_BITS"],
             }
-        
+
         # Spread the small deveopment dataset out over the tree levels for development
         spatial_config['MAX_DATA_ROWS_PER_TREE_CELL'] = 10000
-    
+
     spatial_config_no_debug = {}
     for k, v in spatial_config.items():
         if not k.startswith("DEBUG"):

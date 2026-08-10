@@ -24,13 +24,13 @@ import shared.annotations as anno
 
 def extract_archives():
     logging.info("Extracting archives")
-    
+
     # Look for tar files. If any are found, this indicates that the upstream capsule used tar archiving.
     # Look for parquet files. If any are found, this indicates that the upstream capsule used parquet archiving.
     # If none are found, this indicates that the upstream capsule used custom archiving.
     tar_files = list(glob.glob(f"{data_loc}split*.tar*"))
     parquet_files = list(glob.glob(f"{data_loc}split*.parquet"))
-    
+
     if tar_files:
         logging.info(f"Input tar files:\n  {'\n  '.join(sorted(tar_files)).strip()}" + '\n')
         for tarred_file in tar_files:
@@ -75,7 +75,7 @@ def extract_archives():
                             logging.critical(e)
                             logging.critical(f"\nArchive index content:\n{archive_index_file_content}\n")
                             raise e
-                    
+
                 # Move files up out of the shard worker subdirectories
                 shard_worker_files = glob.glob(f"{data_loc}shard_worker-*/*csv")
                 for shard_worker_file in shard_worker_files:
@@ -91,7 +91,7 @@ def extract_archives():
                 #     for parquet_file in parquet_files:
                 #         df = pd.read_parquet(parquet_file, engine=config['PARQUET_ENGINE'])
                 #         df.to_csv(parquet_file.replace(".parquet", ".csv"), index=False, header=False)
-                
+
                 # Read one parquet file per shard worker (This is better. It groups all shards per shard worker into a single file.)
                 this_shard_worker_parquet_files = [parquet_file for parquet_file in parquet_files if f"shard_worker-{shard_worker_desc_file_hash}." in parquet_file]
                 # print("AAA", parquet_files)
@@ -125,7 +125,7 @@ def extract_archives():
 
 def merge_csv_splits():
     timestamps.append(("merge_csv_splits() start", default_timer()))
-    
+
     merged_df = None
     for csv_i, shard_csv in enumerate(this_shard_input_files):
         timestamps.append(("input_file_loop_top", default_timer()))
@@ -146,7 +146,7 @@ def merge_csv_splits():
             id_src = config['DATA_CONFIG']['id_src']
             logging.info(f"id_src: {id_src}")
             raise RuntimeError("id_src support (Wan-Qing's swc data) is not implemented yet")
-        
+
         id_column_determined = id_column if id_column is not None else header[0]
 
         if csv_i <= 1:
@@ -166,11 +166,11 @@ def merge_csv_splits():
             logging.info("  Merging in another shard file")
             merged_df = pd.concat([merged_df, shard_one_df])
         timestamps.append(("input_file_loop (concat_input_file)", default_timer()))
-        
+
         # DEBUG
         logging.info(f"  Merged duplicate id count: {merged_df[id_column_determined].duplicated().sum()}")
         timestamps.append(("input_file_loop (check_merged_file_dups)", default_timer()))
-    
+
     timestamps.append(("merge_csv_splits() end", default_timer()))
 
     return merged_df
@@ -226,7 +226,7 @@ def convert_non_int_relation_via_enum_property(relation_val, relationship_column
 
 def convert_relation_fields(row, data_relation_col_indices):
     # logging.info(f"convert_relation_fields(): {row}")
-    
+
     # Convert relation fields to either an int or a list of ints
     relation_fields = {lbl: (col, row[col_idx]) for lbl, col, col_idx in data_relation_col_indices}
     for lbl, (col, relation_field_val) in relation_fields.items():
@@ -236,19 +236,19 @@ def convert_relation_fields(row, data_relation_col_indices):
         for relation_val in relation_list:
             # See note in Relation index builder (search for 'enumerated property')
             if not isinstance(relation_val, int):
-                relation_val = convert_non_int_relation_via_enum_property(relation_val, relationship_column_name)
+                relation_val = convert_non_int_relation_via_enum_property(relation_val, col)
             relation_fields[lbl].append(relation_val)
-        
+
         # # The column might already be an int, not a string, so check for that first
         # if isinstance(relation_field_val, int):
         #     relation_field = relation_field_val
         # else:
         #     relation_field_val = str(convert_non_int_relation_via_enum_property(relation_field_val, col))
-            
+
         #     # Casting a float to an int won't raise an exception. We have to check for a float explicitly.
         #     if '.' in relation_field_val:
         #         raise ValueError(f"Relation field must be int or list of ints: {relation_field_val}")
-            
+
         #     try:
         #         # Try casting the field as an int (we have already established it isn't a float above)
         #         relation_field = int(relation_field_val)
@@ -262,16 +262,16 @@ def convert_relation_fields(row, data_relation_col_indices):
         #             relation_field = ast.literal_eval(relation_field_val)
         #             if not isinstance(relation_field, list):
         #                 raise ValueError(f"Relation field must be int or list of ints: {relation_field_val}")
-                    
+
         #             # Ensure that every item in the list is an int
         #             for v in relation_field:
         #                 if not isinstance(v, int):
         #                     raise ValueError(f"Relation field must be int or list of ints: {relation_field_val}")
         #         except:
         #             raise ValueError(f"Relation field must be int or list of ints: {relation_field_val}")
-        
+
         # relation_fields[lbl] = relation_field
-    
+
     return relation_fields
 
 def build_annotation(annotation_description):
@@ -323,14 +323,14 @@ def write_sharded_precomputed_file(writer, subdir, shard_hex):
         # logging.info(f"  filepath: {filepath}")
         file_path = os.path.expanduser(filepath)
         logging.info(f"  filepath: {filepath}")
-    
+
         timestamps.append(("prepare precomputed writer filepath", default_timer()))
-        
+
         file_buffer = io.BytesIO()
         with file_buffer as f_buf:
             writer_profile = writer._writef_by_id_index(f_buf, shard_num=int(shard_hex, 16))  # Remove 'shard_num' param to disable some debugging/validation tests
             timestamps.append(("write precomputed to buffer", default_timer()))
-            
+
             with open(filepath, "wb") as f_disk:
                 f_disk.write(file_buffer.getbuffer())
             timestamps.append(("write precomputed buffer to file", default_timer()))
@@ -361,7 +361,7 @@ def write_sharded_precomputed_file(writer, subdir, shard_hex):
                 shutil.move(id_file, f"{results_loc}")
             elif OUTPUT_STYLE == "results":
                 shutil.move(id_file, f"{results_loc}{subdir}")
-    
+
     timestamps.append(("write_sharded_precomputed_file() end", default_timer()))
 
     return writer_profile
@@ -370,6 +370,11 @@ def calculate_annotation_vector(points):
     """
     At the time of this writing, vectors are only implemented against a single CSV field containing a semi-colon delimited list of comma-delimited points.
     """
+    if len(points) == 0:
+        return 0, 0, 0
+    if len(points) == 1:
+        return points[0][0], points[0][1], points[0][2]
+
     vx_sum, vy_sum, vz_sum = 0, 0, 0
     prev_pt = None
     for pt in points.values():
@@ -378,9 +383,9 @@ def calculate_annotation_vector(points):
             vy_sum += pt[1] - prev_pt[1]
             vz_sum += pt[2] - prev_pt[2]
         prev_pt = pt
-    vx_mean = vx_sum - (len(points) - 1)
-    vy_mean = vy_sum - (len(points) - 1)
-    vz_mean = vz_sum - (len(points) - 1)
+    vx_mean = vx_sum / (len(points) - 1)
+    vy_mean = vy_sum / (len(points) - 1)
+    vz_mean = vz_sum / (len(points) - 1)
 
     return vx_mean, vy_mean, vz_mean
 
@@ -412,7 +417,7 @@ def build_annotation_description__one_annotation_per_row__multiple_points_per_ro
     for prop_lbl, prop_info in config['DATA_CONFIG']['properties'].items():
         if debug:
             logging.info(f"\nProp: {prop_lbl} {prop_info}")
-            
+
         prop_id = prop_lbl  # prop_info['id']
         col_idx = col_index_map[prop_info['id']] if prop_info['id'] is not None else None
         field = row[col_idx] if col_idx is not None else None
@@ -447,10 +452,10 @@ def build_annotation_description__one_annotation_per_row__multiple_points_per_ro
             desc["properties"][prop_id] = enum_value
         else:
             desc["properties"][prop_id] = field
-        
+
         if debug:
             logging.info(f"Anno prop: {desc['properties'][prop_id]}")
-    
+
     if 'point_annotation_config' in config['DATA_CONFIG']:
         desc["position"] = pt_positions[config['DATA_CONFIG']["point_annotation_config"]["pt_column_label"]]
     elif 'line_annotation_config' in config['DATA_CONFIG']:
@@ -458,10 +463,10 @@ def build_annotation_description__one_annotation_per_row__multiple_points_per_ro
         desc["end"] = pt_positions[config['DATA_CONFIG']["line_annotation_config"]["end_pt_column_label"]]
     elif 'polyline_annotation_config' in config['DATA_CONFIG']:
         desc["points"] = list(pt_positions.values())
-    
+
     if debug:
         logging.info(f"Anno desc: {desc}\n")
-    
+
     return desc
 
 def read_single_field_point_list(row):
@@ -480,9 +485,9 @@ def save_csv_annotations_as_precomputed(df, data_properties, data_relation_col_i
     assert columns == header
     header_reverse_map = {col: i for i, col in enumerate(header)}
     logging.info(f"header_reverse_map: {header_reverse_map}")
-    
+
     spatial_pt_columns = config['DATA_CONFIG']['spatial_pt_columns']
-    
+
     annotation_descriptions = []
     # for row_i, row in df.iterrows():  # Pandas Dataframe iteration, slower than itertuples()
     for row_i, row in enumerate(df.itertuples(index=False)):  # Pandas Dataframe iteration, faster than iterrows()
@@ -501,11 +506,11 @@ def save_csv_annotations_as_precomputed(df, data_properties, data_relation_col_i
             pt_positions = read_single_field_point_list(row)
         annotation_description = build_annotation_description__one_annotation_per_row__multiple_points_per_row(row_i, row, columns, pt_positions, data_relation_col_indices, col_index_map)
         annotation_descriptions.append(annotation_description)
-    
+
     timestamps.append(("gather annotation_descriptions from table", default_timer()))
-    
+
     writer = simple_writer_no_spatial_indexing.SimpleWriter("LINE")
-    
+
     if config['ID_SHARDING']:
         writer.by_id_sharding = anno.ShardingSpec(hash=config['ID_SHARDING_HASH'], preshift_bits=config['ID_PRESHIFT_BITS'], shard_bits=config['ID_SHARDING_BITS'], minishard_bits=config['ID_MINISHARDING_BITS'])  # Comment out this line (or don't conditionally don't call it) to generate a non-sharded id index, but be aware that every annotation will get a separate file!
     elif len(annotation_descriptions) > 100:
@@ -546,7 +551,7 @@ def save_csv_annotations_as_precomputed(df, data_properties, data_relation_col_i
         relationship = anno.Relationship(relation)
         logging.info(f"Adding Relationship to writer: {relationship}")
         writer.relationships.append(relationship)
-    
+
     timestamps.append(("init writer", default_timer()))
 
     for i, annotation_description in enumerate(annotation_descriptions):
@@ -554,16 +559,16 @@ def save_csv_annotations_as_precomputed(df, data_properties, data_relation_col_i
         if i < 3:
             logging.info(f"Annotation {i:10}: {annotation}")
         writer.annotations.append(annotation)
-    
+
     timestamps.append(("append annotation_description annotations to writer", default_timer()))
 
     return writer
 
 def save_csv_shard_data_as_precomputed(df, subdir, shard_hex, data_properties, data_relations, data_relation_col_indices):
     timestamps.append(("save_csv_shard_data_as_precomputed() start", default_timer()))
-    
+
     logging.info(f"\nWriting precomputed file for shard hex {shard_hex} to: {results_loc + subdir}")
-    
+
     assert list(df.columns) == header
 
     col_index_map = {col_name: i for i, col_name in enumerate(df.columns)}
@@ -581,7 +586,7 @@ def save_csv_shard_data_as_precomputed(df, subdir, shard_hex, data_properties, d
     writer_profile = write_sharded_precomputed_file(writer, subdir, shard_hex)
 
     timestamps.append(("save_csv_shard_data_as_precomputed() end", default_timer()))
-    
+
     return writer_profile
 
 def build__annotation_description__one_annotation_per_file__one_point_per_row(id_, df, columns, pt_columns, data_properties_cols, data_relations):
@@ -599,7 +604,7 @@ def build__annotation_description__one_annotation_per_file__one_point_per_row(id
     relation_vals = []
     for relation_col in data_relations:
         relation_vals = df[relation_col]
-        
+
     if 'point_annotation_config' in config['DATA_CONFIG']:
         raise RuntimeError("Not implemented yet")
     elif 'line_annotation_config' in config['DATA_CONFIG']:
@@ -618,9 +623,9 @@ def save_swc_annotations_as_precomputed(data_properties, data_properties_cols, d
     pt_column_label = config['DATA_CONFIG']['polyline_annotation_config']['pt_column_label']
     spatial_pt_columns = config['DATA_CONFIG']['spatial_pt_columns']
     pt_columns = spatial_pt_columns[pt_column_label]
-        
+
     annotation_descriptions = []
-    
+
     for fi, shard_swc in enumerate(this_shard_input_files):
         filename = os.path.basename(shard_swc)
         id_ = int(filename[filename.rindex('__')+2:filename.rindex('.')])
@@ -636,11 +641,11 @@ def save_swc_annotations_as_precomputed(data_properties, data_properties_cols, d
 
         annotation_description = build__annotation_description__one_annotation_per_file__one_point_per_row(id_, df, columns, pt_columns, data_properties_cols, data_relations)
         annotation_descriptions.append(annotation_description)
-    
+
     timestamps.append(("gather annotation_descriptions from table", default_timer()))
-    
+
     writer = simple_writer_no_spatial_indexing.SimpleWriter("POLYLINE")
-    
+
     if config['ID_SHARDING']:
         writer.by_id_sharding = anno.ShardingSpec(hash=config['ID_SHARDING_HASH'], preshift_bits=config['ID_PRESHIFT_BITS'], shard_bits=config['ID_SHARDING_BITS'], minishard_bits=config['ID_MINISHARDING_BITS'])  # Comment out this line (or don't conditionally don't call it) to generate a non-sharded id index, but be aware that every annotation will get a separate file!
     elif len(annotation_descriptions) > 100:
@@ -654,13 +659,13 @@ def save_swc_annotations_as_precomputed(data_properties, data_properties_cols, d
     # Define relationships (yes, id indexing needs this)
     for relation in config['DATA_CONFIG']['relations']:
         writer.relationships.append(anno.Relationship(relation))
-    
+
     timestamps.append(("init writer", default_timer()))
 
     for i, annotation_description in enumerate(annotation_descriptions):
         annotation = build_annotation(annotation_description)
         writer.annotations.append(annotation)
-    
+
     timestamps.append(("append annotation_description annotations to writer", default_timer()))
 
     return writer
@@ -669,7 +674,7 @@ def save_swc_shard_data_as_precomputed(subdir, shard_hex, data_properties, data_
     timestamps.append(("save_swc_shard_data_as_precomputed() start", default_timer()))
 
     logging.info(f"\nWriting precomputed file to: {results_loc + subdir}")
-    
+
     # col_index_map = {col_name: i for i, col_name in enumerate(header)}
     # data_properties_cols = [v['id'] for k, v in data_properties.items()]
     # data_property_by_col_idx = {col: col_index_map[col] for col in data_properties_cols}
@@ -688,12 +693,13 @@ if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.CRITICAL, format='%(message)s')
     logging.critical("_" * 100)
     logging.critical("GENERATE ID INDEX SHARDS")
-    
+
     analyze_memory_usage()
 
     data_loc = "../data/"
     results_loc = "../results/"
 
+    # Make sure this subpipeline's config is loaded last so it can override any other config values
     config = read_config(["relation", "spatial", "id"])
     logging.basicConfig(stream=sys.stdout, level=get_logging_level_from_desc(config['LOGGING_LEVEL']), format=config['LOGGING_FORMAT'], force=True)
 
@@ -703,7 +709,7 @@ if __name__ == "__main__":
     logging.getLogger('s3transfer').setLevel(logging.INFO)
     logging.getLogger('aws-cli').setLevel(logging.INFO)
     logging.getLogger('cloudfiles').setLevel(logging.INFO)
-    
+
     logging.getLogger('simple_writer_no_spatial_indexing').setLevel(
         get_logging_level_from_desc(config['PRECOMPUTED_FILE_WRITER_LOGGING_LEVEL']))
     logging.getLogger('sharding').setLevel(
@@ -725,7 +731,7 @@ if __name__ == "__main__":
     SAVE_SHARD_DATA_AS_CSV = False
     if SAVE_SHARD_DATA_AS_CSV:
         os.makedirs(f"{results_loc}{subdir_csv}", exist_ok=True)
-    
+
     FILE_PROCESSING_METHOD = "dataframe"  # dataframe or text
     header = [v for v in config['DATA_CONFIG']['columns']]  # Copy, not just a reference, so we can alter it
     if 'id_column' in config['DATA_CONFIG']:
@@ -823,11 +829,11 @@ if __name__ == "__main__":
                 data_loc_contents = [v for v in data_loc_contents if "placeholder" not in v]
                 logging.info(f"\n{data_loc} contents ({len(data_loc_contents)}) (first 30 shown):")
                 logging.info('  ' + '\n  '.join(data_loc_contents[:30]).strip() + '\n')
-                    
+
                 timestamps.append(("download_files_from_external_storage", default_timer()))
         else:
             logging.info(f"\n{data_loc}DEBUG_FLAG.txt file found. Results won't be downloaded from bucket.")
-        
+
         extract_archives()
         analyze_memory_usage()
 
@@ -841,7 +847,7 @@ if __name__ == "__main__":
         for shard_hex in assigned_shards:
             logging.info("*" * 100)
             timestamps.append(("shard_loop_top", default_timer()))
-            
+
             if EXPECT_SHARD_DIRS:
                 # Assume the upstream capsule is "group shard splits" (4496009), which outputs shard directories containing individual files
                 shard_dir = f"{data_loc}shard-{shard_hex}/"
@@ -850,7 +856,7 @@ if __name__ == "__main__":
             else:
                 # Assume the upstream capsule is "build id index" (7252776), which outputs individual files
                 this_shard_input_files = glob.glob(f"{data_loc}split*shard-{shard_hex}_*.{input_extension}")
-        
+
             logging.info(f"Input files for shard {shard_hex}:\n  {'\n  '.join(this_shard_input_files)}\n")
 
             col_index_map = {col_name: i for i, col_name in enumerate(config['DATA_CONFIG']['columns'])}
@@ -867,7 +873,7 @@ if __name__ == "__main__":
                 if input_extension == "csv":
                     logging.info("Archives are expected to be CSV files")
                     merged_df = merge_csv_splits()
-                    
+
                     timestamps.append(("merge_splits", default_timer()))
 
                     logging.info(f"Merged shard len: {len(merged_df)}")
@@ -881,12 +887,12 @@ if __name__ == "__main__":
                     elif 'id_src' in config['DATA_CONFIG']:
                         raise RuntimeError("id_src support (Wan-Qing's swc data) is not implemented yet")
                     logging.info(f"Final merged duplicate id count: {merged_df[id_column if id_column is not None else header[0]].duplicated().sum()}")
-                    
+
                     writer_profile = save_csv_shard_data_as_precomputed(merged_df, subdir_shard, shard_hex, data_properties, data_relations, data_relation_col_indices)
                     writer_profiles.append((shard_hex, writer_profile))
 
                     timestamps.append(("save_as_precomputed", default_timer()))
-                    
+
                     if SAVE_SHARD_DATA_AS_CSV:
                         save_shard_data_as_csv(merged_df, subdir_csv, shard_hex)
 
@@ -907,7 +913,7 @@ if __name__ == "__main__":
             timestamps.append(("shard_loop_bottom", default_timer()))
 
         logging.info("\n" + "* " * 50 + "\n")
-    
+
         if not os.path.exists(f"{data_loc}DEBUG_FLAG.txt"):
             if config['UPLOAD_RESULTS_TO_GCP']:
                 logging.info("\nUploading files to Google Storage")
@@ -944,18 +950,18 @@ if __name__ == "__main__":
                 elap_t = time[1] - timestamps[ti-1][1]
                 accum_elapsed_times[time[0]] += elap_t
                 # logging.error(f"  {seconds_to_hms(elap_t)} {time[0]}")
-            
+
         logging.error("Accumulated elapsed timestamps:")
         for label, elap_t in accum_elapsed_times.items():
             logging.error(f"  {seconds_to_hms(elap_t)} {label}")
-    
+
     if missing_enum_labels:
         logging.error(f"Missing enum labels: {missing_enum_labels}")
         raise ValueError(f"Missing enum labels: {missing_enum_labels}")
-    
+
     os.makedirs(f"{results_loc}by_id/", exist_ok=True)
     finalize_results(f"{results_loc}by_id/")
-    
+
     analyze_memory_usage()
 
 logging.info("\nDone")
