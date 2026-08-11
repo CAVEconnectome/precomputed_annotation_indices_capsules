@@ -260,7 +260,7 @@ def determine_pt_subtreecell(cell_bounds_low, cell_bounds_mid, cell_bounds_high,
 
     return child_cell_local_id
 
-def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotations, tree_level, cell_bounds_low, cell_bounds_mid, cell_bounds_high, verbose):
+def select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, num_subsplits, annotations, tree_level, cell_bounds_low, cell_bounds_mid, cell_bounds_high, verbose):
     '''
     Save the rows intended to be held within this tree cell.
     For the rest of the rows, determine which of eight children they belong to and save them to the corresponding output.
@@ -1028,6 +1028,8 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
     # start_timeblock("process_one_treecell_input_file_or_dir()")
     start_timeblock("preprocess")
 
+    num_subsplits = config['DATA_CONFIG']['data_size'][6]
+    
     # verbose = file_idx < 5 or (file_idx < 1000 and file_idx % 200 == 0) or (file_idx < 100000 and file_idx % 20000 == 0)
     verbose = file_idx == 0
     if verbose:
@@ -1248,7 +1250,7 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
 
         end_start_timeblocks("read_input", "process_input")
 
-        annos_this_level, annos_children_levels, num_cell_nondups = select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, annotations, tree_level, cell_bounds_low, cell_bounds_mid, cell_bounds_high, verbose)
+        annos_this_level, annos_children_levels, num_cell_nondups = select_holdout_rows_and_subdivide_subtree_rows(src_loc, num_splits, num_subsplits, annotations, tree_level, cell_bounds_low, cell_bounds_mid, cell_bounds_high, verbose)
 
         end_start_timeblocks("process_input", "call_add_tree_level_cell_id_to_saved_annotations()")
 
