@@ -26,8 +26,10 @@ All intermediate data lives in RAM (via RAMDataPond).
 import sys
 import logging
 import os
+import pprint
 import random
 import shutil
+import json
 from collections import defaultdict, Counter
 from timeit import default_timer
 
@@ -43,6 +45,7 @@ from shared.ram_data_pond import *
 # Import existing capsule modules so we can reuse their functions without duplicating logic.
 # Their module-level globals (data_loc, results_loc, config, ram_data_pond, …) are patched
 # just before any of their functions are called.
+import capsule_generate_spatial_index_config.capsule_generate_spatial_index_config as gsic
 import capsule_build_spatial_index.capsule_build_spatial_index as bsi
 import capsule_generate_spatial_index_shards.finalize_annotations as fa
 
@@ -50,6 +53,19 @@ import capsule_generate_spatial_index_shards.finalize_annotations as fa
 # ---------------------------------------------------------------------------
 # Core pipeline
 # ---------------------------------------------------------------------------
+
+def _deep_dictionary_override(default: dict, override: dict, parent_keys=[]) -> dict:
+    result = dict(default)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = _deep_dictionary_override(result[key], value, parent_keys+[key])
+        else:
+            if key in default:
+                logging.info(f"Overriding default pipeline config '{".".join(parent_keys)}{"." if parent_keys else ""}{key}' = {default[key]} with {value}")
+            else:
+                logging.info(f"Adding pipeline config '{".".join(parent_keys)}{"." if parent_keys else ""}{key}' = {value}")
+            result[key] = value
+    return result
 
 def _prepare_input_file(input_csv_path, data_loc):
     """
@@ -219,6 +235,70 @@ def _write_precomputed_shards(treelevel_shard_csv, data_loc, results_loc, config
     logging.info("All precomputed shard files written.")
 
 
+def generate_spatial_config(data_loc, config):
+    """
+    Replicates the logic from capsule_generate_spatial_index_config.__main__:
+    applies any pipeline_spatial_config overrides from config, computes per-tree-level
+    sharding specs, and writes the result to {data_loc}job_spatial_config.py so that
+    a subsequent read_config(["id", "relation", "spatial"]) picks it up.
+
+    In the distributed CodeOcean pipeline this capsule writes to its own results_loc,
+    which becomes the data_loc of the next capsule.  Here we write directly to data_loc
+    so the file is immediately available to the following read_config() call.
+    """
+    spatial_config = dict(gsic.spatial_config)  # work on an independent copy
+
+    if 'pipeline_spatial_config' in config['DATA_CONFIG']:
+        for k, v in config['DATA_CONFIG']['pipeline_spatial_config'].items():
+            if k == 'docstring':
+                continue
+            logging.info(
+                f"Overriding spatial pipeline config {k} = {spatial_config.get(k)} with {v}")
+            spatial_config[k] = v
+    logging.info("")
+
+    sharding_spec = generate_sharding_spec(
+        config['DATA_CONFIG']['data_size'][2],
+        config['DATA_CONFIG']['data_size'][1],
+        spatial_config['SPATIAL_SHARDING_HASH'],
+        MINISHARD_TARGET_COUNT=config["MINISHARD_TARGET_COUNT"],
+        SHARD_TARGET_SIZE=config["SHARD_TARGET_SIZE"],
+    )
+    logging.critical(
+        f"Generated sharding_spec:\n{json.dumps(sharding_spec, indent=2)}\n"
+        f"Will produce 2^{sharding_spec['shard_bits']} = "
+        f"{2**sharding_spec['shard_bits']} shard files")
+
+    if spatial_config['DEFAULT_SPATIAL_SHARDING_BITS'] is None:
+        spatial_config['TREE_LEVEL_SHARDING_SPECS'] = [None] * spatial_config['MAX_NUM_TREE_LEVELS']
+        for tree_level in range(spatial_config['MAX_NUM_TREE_LEVELS']):
+            tree_level_sharding_spec = generate_spatial_index_sharding_spec_2(
+                tree_level,
+                spatial_config['MAX_DATA_ROWS_PER_TREE_CELL'],
+                config['DATA_CONFIG']['data_size'],
+                spatial_config['SPATIAL_SHARDING_HASH'],
+                MINISHARD_TARGET_COUNT=config["MINISHARD_TARGET_COUNT"],
+                SHARD_TARGET_SIZE=config["SHARD_TARGET_SIZE"],
+            )
+            spatial_config['TREE_LEVEL_SHARDING_SPECS'][tree_level] = tree_level_sharding_spec
+    else:
+        spatial_config['TREE_LEVEL_SHARDING_SPECS'] = [None] * spatial_config['MAX_NUM_TREE_LEVELS']
+        for tree_level in range(spatial_config['MAX_NUM_TREE_LEVELS']):
+            spatial_config['TREE_LEVEL_SHARDING_SPECS'][tree_level] = {
+                "preshift_bits":  spatial_config["DEFAULT_SPATIAL_PRESHIFT_BITS"],
+                "shard_bits":     spatial_config["DEFAULT_SPATIAL_SHARDING_BITS"],
+                "minishard_bits": spatial_config["DEFAULT_SPATIAL_MINISHARDING_BITS"],
+            }
+        spatial_config['MAX_DATA_ROWS_PER_TREE_CELL'] = 10000
+
+    spatial_config = {k: v for k, v in spatial_config.items() if not k.startswith("DEBUG")}
+
+    out_path = os.path.join(data_loc, "job_spatial_config.py")
+    with open(out_path, 'w') as f:
+        f.write(pprint.pformat(spatial_config, indent=2) + '\n')
+    logging.critical(f"Wrote spatial config to {out_path}")
+
+
 def build_spatial_index(data_loc, results_loc, config, input_csv_path=None):
     """
     End-to-end spatial index builder for a single CSV input.
@@ -288,7 +368,35 @@ if __name__ == "__main__":
     logging.critical("_" * 100)
     logging.critical("BUILD SPATIAL INDEX STANDALONE")
 
+    parser = argparse.ArgumentParser(
+        description="Standalone spatial index builder (single CSV -> precomputed shards)")
+    parser.add_argument(
+        '--input_file', dest='input_file', default=None,
+        help="Path to the input CSV file.  If not given, a file matching "
+             "*split-001@1*.csv must already be present in ../data/")
+    parser.add_argument('--capsule', dest='capsule', default=None)
+    parser.add_argument('--config_override', dest='config_override', default=None)
+    args, _ = parser.parse_known_args()
+
+    # Read base config (without spatial) to supply inputs to generate_spatial_config.
+    config = read_config(["id", "relation"])
+
+    # Apply any App Panel overrides now so pipeline_spatial_config overrides are
+    # available during sharding spec calculation.
+    if args.config_override:
+        config['DATA_CONFIG'] = _deep_dictionary_override(
+            config['DATA_CONFIG'], json.loads(args.config_override))
+
+    # Generate job_spatial_config.py in data_loc so read_config can pick it up below.
+    generate_spatial_config(data_loc, config)
+
+    # Now read the full config, which includes the spatial config we just generated.
     config = read_config(["id", "relation", "spatial"])
+
+    # Re-apply App Panel overrides to the full config.
+    if args.config_override:
+        config['DATA_CONFIG'] = _deep_dictionary_override(
+            config['DATA_CONFIG'], json.loads(args.config_override))
 
     logging.basicConfig(
         level=get_logging_level_from_desc(config['LOGGING_LEVEL']),
@@ -300,15 +408,6 @@ if __name__ == "__main__":
         ],
         format=config['LOGGING_FORMAT'],
         force=True)
-
-    parser = argparse.ArgumentParser(
-        description="Standalone spatial index builder (single CSV -> precomputed shards)")
-    parser.add_argument(
-        '--input_file', dest='input_file', default=None,
-        help="Path to the input CSV file.  If not given, a file matching "
-             "*split-001@1*.csv must already be present in ../data/")
-    parser.add_argument('--capsule', dest='capsule', default=None)
-    args, _ = parser.parse_known_args()
 
     build_spatial_index(data_loc, results_loc, config, args.input_file)
 

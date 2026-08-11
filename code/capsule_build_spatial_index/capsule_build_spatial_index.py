@@ -817,7 +817,7 @@ Cell bounds:        {[cell_bounds_low, cell_bounds_high]}
 
     return shard_hex
 
-def save_subtrees(annos_children_levels, subsplit_id, num_splits, split_id, tree_level, tree_level_cell_id, cell_bounds_low, cell_bounds_mid, cell_bounds_high):
+def save_subtrees(src_loc, annos_children_levels, subsplit_id, num_splits, split_id, tree_level, tree_level_cell_id, cell_bounds_low, cell_bounds_mid, cell_bounds_high):
     '''
     Save the subtree files that will be passed to deeper levels of the tree for further processing
     '''
@@ -1029,7 +1029,7 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
     start_timeblock("preprocess")
 
     num_subsplits = config['DATA_CONFIG']['data_size'][6]
-    
+
     # verbose = file_idx < 5 or (file_idx < 1000 and file_idx % 200 == 0) or (file_idx < 100000 and file_idx % 20000 == 0)
     verbose = file_idx == 0
     if verbose:
@@ -1296,7 +1296,7 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
         # the union doesn't get littered with numerous copies of the header row. Alternatively, the unioning step could judiciously remove the header from each incoming piece before it combines them.
         shard_hex = save_this_treecell_data(src_loc, annos_this_level, subsplit_id, num_splits, split_id, tree_level, tree_level_cell_id, tree_level_shard_histograms, morton_code, cell_bounds_low, cell_bounds_high)
 
-        save_subtrees(annos_children_levels, subsplit_id, num_splits, split_id, tree_level, tree_level_cell_id, cell_bounds_low, cell_bounds_mid, cell_bounds_high)
+        save_subtrees(src_loc, annos_children_levels, subsplit_id, num_splits, split_id, tree_level, tree_level_cell_id, cell_bounds_low, cell_bounds_mid, cell_bounds_high)
 
         # end_end_timeblocks("save_results", "process_one_treecell_input_file_or_dir()")
         end_timeblock("save_results")
