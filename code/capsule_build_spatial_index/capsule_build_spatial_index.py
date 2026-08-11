@@ -774,7 +774,7 @@ def save_this_treecell_data_as_object(annos_this_level, subdir, subsplit_id, num
 
     return object_key
 
-def save_this_treecell_data(annos_this_level, subsplit_id, num_splits, split_id, tree_level, tree_level_cell_id, tree_level_shard_histograms, morton_code, cell_bounds_low, cell_bounds_high):
+def save_this_treecell_data(src_loc, annos_this_level, subsplit_id, num_splits, split_id, tree_level, tree_level_cell_id, tree_level_shard_histograms, morton_code, cell_bounds_low, cell_bounds_high):
     if len(annos_this_level) <= 0:
         return
 
@@ -1294,7 +1294,7 @@ def process_one_treecell_input_file_or_dir(subsplit_id, subsplit_range_row_start
         # Save the held rows for this tree cell.
         # It's important to remove the header from the final output file so that, when we union the file with other splits,
         # the union doesn't get littered with numerous copies of the header row. Alternatively, the unioning step could judiciously remove the header from each incoming piece before it combines them.
-        shard_hex = save_this_treecell_data(annos_this_level, subsplit_id, num_splits, split_id, tree_level, tree_level_cell_id, tree_level_shard_histograms, morton_code, cell_bounds_low, cell_bounds_high)
+        shard_hex = save_this_treecell_data(src_loc, annos_this_level, subsplit_id, num_splits, split_id, tree_level, tree_level_cell_id, tree_level_shard_histograms, morton_code, cell_bounds_low, cell_bounds_high)
 
         save_subtrees(annos_children_levels, subsplit_id, num_splits, split_id, tree_level, tree_level_cell_id, cell_bounds_low, cell_bounds_mid, cell_bounds_high)
 
