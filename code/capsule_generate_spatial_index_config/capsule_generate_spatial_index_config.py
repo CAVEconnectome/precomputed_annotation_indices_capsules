@@ -159,9 +159,6 @@ if __name__ == "__main__":
                 "minishard_bits": spatial_config["DEFAULT_SPATIAL_MINISHARDING_BITS"],
             }
 
-        # Spread the small deveopment dataset out over the tree levels for development
-        spatial_config['MAX_DATA_ROWS_PER_TREE_CELL'] = 10000
-
     spatial_config_no_debug = {}
     for k, v in spatial_config.items():
         if not k.startswith("DEBUG"):
