@@ -353,7 +353,6 @@ def generate_spatial_config(data_loc, config):
                 "shard_bits":     spatial_config["DEFAULT_SPATIAL_SHARDING_BITS"],
                 "minishard_bits": spatial_config["DEFAULT_SPATIAL_MINISHARDING_BITS"],
             }
-        spatial_config['MAX_DATA_ROWS_PER_TREE_CELL'] = 10000
 
     spatial_config = {k: v for k, v in spatial_config.items() if not k.startswith("DEBUG")}
 
