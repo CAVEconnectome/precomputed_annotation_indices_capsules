@@ -48,6 +48,7 @@ from shared.ram_data_pond import *
 import capsule_generate_spatial_index_config.capsule_generate_spatial_index_config as gsic
 import capsule_build_spatial_index.capsule_build_spatial_index as bsi
 import capsule_generate_spatial_index_shards.finalize_annotations as fa
+import capsule_reorganize_directory_structure.capsule_reorganize_directory_structure as rds
 
 
 # ---------------------------------------------------------------------------
@@ -235,6 +236,69 @@ def _write_precomputed_shards(treelevel_shard_csv, data_loc, results_loc, config
     logging.info("All precomputed shard files written.")
 
 
+def _write_finalization_files(treelevel_shard_csv, data_loc, results_loc, config):
+    """
+    Generate the Neuroglancer info file and pipeline_config.json using the logic
+    from capsule_reorganize_directory_structure.
+
+    ID and RELATION index processing is disabled because this standalone module
+    only builds the spatial index.  Safe defaults are injected for any config keys
+    that the id/relation config files would normally supply, so generate_info_files
+    works correctly even when those optional configs were never loaded.
+    """
+    # Determine annotation type from DATA_CONFIG (same logic as reorganize capsule).
+    data_config = config['DATA_CONFIG']
+    if "point_annotation_config" in data_config:
+        annotation_type = "POINT"
+    elif "line_annotation_config" in data_config:
+        annotation_type = "LINE"
+    elif "polyline_annotation_config" in data_config:
+        annotation_type = "POLYLINE"
+    else:
+        raise ValueError(
+            "Cannot determine annotation type from DATA_CONFIG "
+            "(expected point_annotation_config, line_annotation_config, "
+            "or polyline_annotation_config)")
+
+    # Derive the maximum tree level from the shards we actually wrote.
+    max_tree_level = (
+        max(tl for tl, _ in treelevel_shard_csv.keys())
+        if treelevel_shard_csv else 0)
+    logging.critical(f"Max tree level: {max_tree_level}")
+
+    # Build a config view for the reorganize module with ID/RELATION indices off
+    # and safe defaults for any keys those optional configs would have provided.
+    cfg = dict(config)
+    cfg['ID_INDEX_ENABLED'] = False
+    cfg['RELATION_INDEX_ENABLED'] = False
+    cfg.setdefault('ID_SHARDING', False)
+    cfg.setdefault('RELATION_SHARDING', False)
+    # Avoid mutating the caller's DATA_CONFIG when generate_info_files strips 'docstring'.
+    cfg['DATA_CONFIG'] = dict(config['DATA_CONFIG'])
+    cfg['DATA_CONFIG'].setdefault('relations', [])
+
+    # Patch the reorganize module's globals before calling its functions.
+    rds.config = cfg
+    rds.data_loc = data_loc
+    rds.results_loc = results_loc
+
+    # Write the info file via the reorganize capsule's function.
+    rds.generate_info_files(max_tree_level, annotation_type)
+
+    # Write pipeline_config.json (json.dump may fail on non-serialisable values;
+    # fall back to repr so we always produce something).
+    pipeline_config_path = os.path.join(results_loc, "pipeline_config.json")
+    try:
+        with open(pipeline_config_path, 'w') as f:
+            json.dump(cfg, f, indent=4)
+    except (TypeError, ValueError) as exc:
+        logging.warning(
+            f"Config is not fully JSON-serialisable ({exc}); writing repr instead")
+        with open(pipeline_config_path, 'w') as f:
+            f.write(repr(cfg))
+    logging.critical(f"Wrote pipeline_config.json to {pipeline_config_path}")
+
+
 def generate_spatial_config(data_loc, config):
     """
     Replicates the logic from capsule_generate_spatial_index_config.__main__:
@@ -340,6 +404,9 @@ def build_spatial_index(data_loc, results_loc, config, input_csv_path=None):
 
     # Phase 3: write precomputed .shard files.
     _write_precomputed_shards(treelevel_shard_csv, data_loc, results_loc, config)
+
+    # Phase 4: write the Neuroglancer info file and pipeline_config.json.
+    _write_finalization_files(treelevel_shard_csv, data_loc, results_loc, config)
 
 
 # ---------------------------------------------------------------------------
