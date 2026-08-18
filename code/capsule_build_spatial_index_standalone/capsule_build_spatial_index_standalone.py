@@ -408,6 +408,44 @@ def build_spatial_index(data_loc, results_loc, config, input_csv_path=None):
     _write_finalization_files(treelevel_shard_csv, data_loc, results_loc, config)
 
 
+def run(input_dir, output_dir, config, config_override, input_file):
+    # Apply any App Panel overrides now so pipeline_spatial_config overrides are
+    # available during sharding spec calculation.
+    if config_override:
+        config['DATA_CONFIG'] = _deep_dictionary_override(
+            config['DATA_CONFIG'], json.loads(config_override))
+
+    # Generate job_spatial_config.py in input_dir so read_config can pick it up below.
+    generate_spatial_config(input_dir, config)
+
+    # Now read the full config, which includes the spatial config we just generated.
+    config = read_config(["id", "relation", "spatial"])
+
+    # Re-apply App Panel overrides to the full config.
+    if config_override:
+        config['DATA_CONFIG'] = _deep_dictionary_override(
+            config['DATA_CONFIG'], json.loads(config_override))
+
+    logging.basicConfig(
+        level=get_logging_level_from_desc(config['LOGGING_LEVEL']),
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler(
+                f"{output_dir}log_build_spatial_index_standalone_{logging_uid}.log",
+                mode="a"),
+        ],
+        format=config['LOGGING_FORMAT'],
+        force=True)
+
+    build_spatial_index(input_dir, output_dir, config, input_file)
+
+    finalize_results(output_dir)
+    process_running_time()
+    dump_profile()
+
+    logging.info("\nDone")
+
+
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
@@ -418,9 +456,9 @@ if __name__ == "__main__":
     data_loc = "../data/"
     results_loc = "../results/"
 
-    logging_uid = hex(int(random.random() * 1000000000000))[2:]
-
     os.makedirs(results_loc, exist_ok=True)
+
+    logging_uid = hex(int(random.random() * 1000000000000))[2:]
 
     logging.basicConfig(
         level=logging.CRITICAL,
@@ -447,38 +485,4 @@ if __name__ == "__main__":
     # Read base config (without spatial) to supply inputs to generate_spatial_config.
     config = read_config(["id", "relation"])
 
-    # Apply any App Panel overrides now so pipeline_spatial_config overrides are
-    # available during sharding spec calculation.
-    if args.config_override:
-        config['DATA_CONFIG'] = _deep_dictionary_override(
-            config['DATA_CONFIG'], json.loads(args.config_override))
-
-    # Generate job_spatial_config.py in data_loc so read_config can pick it up below.
-    generate_spatial_config(data_loc, config)
-
-    # Now read the full config, which includes the spatial config we just generated.
-    config = read_config(["id", "relation", "spatial"])
-
-    # Re-apply App Panel overrides to the full config.
-    if args.config_override:
-        config['DATA_CONFIG'] = _deep_dictionary_override(
-            config['DATA_CONFIG'], json.loads(args.config_override))
-
-    logging.basicConfig(
-        level=get_logging_level_from_desc(config['LOGGING_LEVEL']),
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(
-                f"{results_loc}log_build_spatial_index_standalone_{logging_uid}.log",
-                mode="a"),
-        ],
-        format=config['LOGGING_FORMAT'],
-        force=True)
-
-    build_spatial_index(data_loc, results_loc, config, args.input_file)
-
-    finalize_results(results_loc)
-    process_running_time()
-    dump_profile()
-
-    logging.info("\nDone")
+    run(data_loc, results_loc, config, args.config_override, args.input_file)
