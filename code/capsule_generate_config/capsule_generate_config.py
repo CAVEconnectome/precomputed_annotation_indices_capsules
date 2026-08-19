@@ -69,12 +69,12 @@ config = {
     "AWS_PROJECT_PATH": "from_workgroups/ng_precomputed_annotations_pipeline_scratch",
 }
 
-def init_config_w_data_config(data_config):
-    config = add_timestamp_and_uri_to_config(config)
+def init_config_w_data_config(data_config, debug_flag=False):
+    config_w_timestamp = add_timestamp_and_uri_to_config(config, debug_flag)
 
-    config['DATA_CONFIG'] = data_config
+    config_w_timestamp['DATA_CONFIG'] = data_config
     
-    return config
+    return config_w_timestamp
 
 def read_data_config(data_config_filedir_path):
     data_config_filedir_path += '/' if data_config_filedir_path[-1] != '/' else ''
@@ -87,18 +87,18 @@ def read_data_config(data_config_filedir_path):
     
     return data_config
 
-def init_config_w_data_config_file(data_config_filedir_path):
+def init_config_w_data_config_file(data_config_filedir_path, debug_flag=False):
     # Read the data config file and fold it into the global config
     data_config = read_data_config(data_config_filedir_path)
     
-    config = init_config_w_data_config(data_config)
+    config = init_config_w_data_config(data_config, debug_flag)
     
     logging.info("")
 
     return config
 
-def add_timestamp_and_uri_to_config(config):
-    if not os.path.exists(f"{data_loc}DEBUG_FLAG.txt"):
+def add_timestamp_and_uri_to_config(config, debug_flag=False):
+    if not debug_flag:
         now = datetime.datetime.now(datetime.timezone.utc)
         timestamp = now.strftime("%Y-%m-%d_%H-%M-%S_%Z")
     else:
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     #     raise FileNotFoundError(f"File not found: {data_loc}{data_config_filename}")
 
     # Read the data config file
-    config = init_config_w_data_config_file(data_loc)
+    config = init_config_w_data_config_file(data_loc, os.path.exists(f"{data_loc}DEBUG_FLAG.txt"))
 
     # Enact any App Panel (command line argument) overrides.
     config['DATA_CONFIG'] = deep_dictionary_override(config['DATA_CONFIG'], json.loads(args.config_override))
