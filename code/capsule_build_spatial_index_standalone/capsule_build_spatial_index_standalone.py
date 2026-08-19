@@ -484,7 +484,6 @@ if __name__ == "__main__":
 
     # Read base config (without spatial) to supply inputs to generate_spatial_config.
     config = gc.init_config_w_data_config_file(data_loc)
-    data_config = gc.read_data_config()
 
     # Apply any App Panel overrides now so pipeline_spatial_config overrides are
     # available during sharding spec calculation.
@@ -524,4 +523,5 @@ if __name__ == "__main__":
 
 
 
+    data_config = gc.read_data_config(data_loc)
     run(data_loc, results_loc, data_config, args.input_file)
