@@ -45,6 +45,7 @@ from shared.ram_data_pond import *
 # Import existing capsule modules so we can reuse their functions without duplicating logic.
 # Their module-level globals (data_loc, results_loc, config, ram_data_pond, …) are patched
 # just before any of their functions are called.
+import capsule_generate_config.capsule_generate_config as gc
 import capsule_generate_spatial_index_config.capsule_generate_spatial_index_config as gsic
 import capsule_build_spatial_index.capsule_build_spatial_index as bsi
 import capsule_generate_spatial_index_shards.finalize_annotations as fa
@@ -361,6 +362,8 @@ def generate_spatial_config(data_loc, config):
         f.write(pprint.pformat(spatial_config, indent=2) + '\n')
     logging.critical(f"Wrote spatial config to {out_path}")
 
+    return spatial_config
+
 
 def build_spatial_index(data_loc, results_loc, config, input_csv_path=None):
     """
@@ -408,23 +411,8 @@ def build_spatial_index(data_loc, results_loc, config, input_csv_path=None):
     _write_finalization_files(treelevel_shard_csv, data_loc, results_loc, config)
 
 
-def run(input_dir, output_dir, config, config_override, input_file):
-    # Apply any App Panel overrides now so pipeline_spatial_config overrides are
-    # available during sharding spec calculation.
-    if config_override:
-        config['DATA_CONFIG'] = _deep_dictionary_override(
-            config['DATA_CONFIG'], json.loads(config_override))
-
-    # Generate job_spatial_config.py in input_dir so read_config can pick it up below.
-    generate_spatial_config(input_dir, config)
-
-    # Now read the full config, which includes the spatial config we just generated.
-    config = read_config(["id", "relation", "spatial"])
-
-    # Re-apply App Panel overrides to the full config.
-    if config_override:
-        config['DATA_CONFIG'] = _deep_dictionary_override(
-            config['DATA_CONFIG'], json.loads(config_override))
+def run(input_dir, output_dir, data_config, input_file):
+    config = gc.init_config_w_data_config(data_config)
 
     logging.basicConfig(
         level=get_logging_level_from_desc(config['LOGGING_LEVEL']),
@@ -436,6 +424,18 @@ def run(input_dir, output_dir, config, config_override, input_file):
         ],
         format=config['LOGGING_FORMAT'],
         force=True)
+    
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Generate job_spatial_config.py in input_dir so read_config can pick it up below.
+    spatial_config = generate_spatial_config(input_dir, config)
+
+    # read_config() reads the main config, then the sub-configs, then folds the sub-configs into the main config.
+    # For this entrypoint however, we don't want to read, much less reread, config files, since the configuration is passed in.
+    # So we will just fold the spatial sub-config in right here.
+    # Note that this replicats that code, but it is a mere key/value copy-over, as proceeds below:
+    for k, v in spatial_config.items():
+        config[k] = v
 
     build_spatial_index(input_dir, output_dir, config, input_file)
 
@@ -456,9 +456,9 @@ if __name__ == "__main__":
     data_loc = "../data/"
     results_loc = "../results/"
 
-    os.makedirs(results_loc, exist_ok=True)
-
     logging_uid = hex(int(random.random() * 1000000000000))[2:]
+
+    os.makedirs(results_loc, exist_ok=True)
 
     logging.basicConfig(
         level=logging.CRITICAL,
@@ -483,6 +483,45 @@ if __name__ == "__main__":
     args, _ = parser.parse_known_args()
 
     # Read base config (without spatial) to supply inputs to generate_spatial_config.
-    config = read_config(["id", "relation"])
+    config = gc.init_config_w_data_config_file()
+    data_config = gc.read_data_config()
 
-    run(data_loc, results_loc, config, args.config_override, args.input_file)
+    # Apply any App Panel overrides now so pipeline_spatial_config overrides are
+    # available during sharding spec calculation.
+    if args.config_override:
+        config['DATA_CONFIG'] = _deep_dictionary_override(
+            config['DATA_CONFIG'], json.loads(args.config_override))
+
+    # Generate job_spatial_config.py in data_loc so read_config can pick it up below.
+    spatial_config = generate_spatial_config(data_loc, config)
+
+    # Now read the full config, which includes the spatial config we just generated.
+    config = read_config(["id", "relation", "spatial"])
+
+    # Re-apply App Panel overrides to the full config.
+    if args.config_override:
+        config['DATA_CONFIG'] = _deep_dictionary_override(
+            config['DATA_CONFIG'], json.loads(args.config_override))
+
+    logging.basicConfig(
+        level=get_logging_level_from_desc(config['LOGGING_LEVEL']),
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler(
+                f"{results_loc}log_build_spatial_index_standalone_{logging_uid}.log",
+                mode="a"),
+        ],
+        format=config['LOGGING_FORMAT'],
+        force=True)
+
+    build_spatial_index(data_loc, results_loc, config, args.input_file)
+
+    finalize_results(results_loc)
+    process_running_time()
+    dump_profile()
+
+    logging.info("\nDone")
+
+
+
+    run(data_loc, results_loc, data_config, args.input_file)

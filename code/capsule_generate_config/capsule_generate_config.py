@@ -69,6 +69,33 @@ config = {
     "AWS_PROJECT_PATH": "from_workgroups/ng_precomputed_annotations_pipeline_scratch",
 }
 
+def init_config_w_data_config(data_config):
+    config = add_timestamp_and_uri_to_config(config)
+
+    config['DATA_CONFIG'] = data_config
+    
+    return config
+
+def read_data_config():
+    json_files = list(glob.glob(f"{data_loc}*.json"))
+    assert len(json_files) == 1
+    data_config_file = json_files[0]
+    logging.info(f"Found config json file: {data_config_file}")
+    with open(data_config_file) as f:
+        data_config = json.load(f)
+    
+    return data_config
+
+def init_config_w_data_config_file():
+    # Read the data config file and fold it into the global config
+    data_config = read_data_config()
+    
+    config = init_config_w_data_config(data_config)
+    
+    logging.info("")
+
+    return config
+
 def add_timestamp_and_uri_to_config(config):
     if not os.path.exists(f"{data_loc}DEBUG_FLAG.txt"):
         now = datetime.datetime.now(datetime.timezone.utc)
@@ -110,8 +137,6 @@ if __name__ == "__main__":
     logging.info(f"{data_loc} contents:")
     logging.info('  ' + '\n  '.join(sorted(os.listdir(data_loc))).strip() + '\n')
 
-    config = add_timestamp_and_uri_to_config(config)
-
     # Read the description of the data for the run from a separate JSON file.
     # This description differs conceptually from configuring how the pipeline operates, which is indicated in the dictionary provided at the top of this source file.
     # Note that the DATA_SIZE configuration parameter has been left in the dictionary instead of the JSON file
@@ -136,14 +161,7 @@ if __name__ == "__main__":
     #     raise FileNotFoundError(f"File not found: {data_loc}{data_config_filename}")
 
     # Read the data config file
-    json_files = list(glob.glob(f"{data_loc}*.json"))
-    assert len(json_files) == 1
-    data_config_file = json_files[0]
-    logging.info(f"Found config json file: {data_config_file}")
-    with open(data_config_file) as f:
-        data_config = json.load(f)
-    config['DATA_CONFIG'] = data_config
-    logging.info("")
+    config = init_config_w_data_config_file()
 
     # Enact any App Panel (command line argument) overrides.
     config['DATA_CONFIG'] = deep_dictionary_override(config['DATA_CONFIG'], json.loads(args.config_override))
