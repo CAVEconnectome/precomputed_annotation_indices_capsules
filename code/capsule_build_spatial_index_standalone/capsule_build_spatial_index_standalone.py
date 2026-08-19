@@ -483,7 +483,7 @@ if __name__ == "__main__":
     args, _ = parser.parse_known_args()
 
     # Read base config (without spatial) to supply inputs to generate_spatial_config.
-    config = gc.init_config_w_data_config_file()
+    config = gc.init_config_w_data_config_file(data_loc)
     data_config = gc.read_data_config()
 
     # Apply any App Panel overrides now so pipeline_spatial_config overrides are

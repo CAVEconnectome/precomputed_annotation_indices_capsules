@@ -76,19 +76,20 @@ def init_config_w_data_config(data_config):
     
     return config
 
-def read_data_config():
-    json_files = list(glob.glob(f"{data_loc}*.json"))
+def read_data_config(data_config_filedir_path):
+    data_config_filedir_path += '/' if data_config_filedir_path[-1] != '/' else ''
+    json_files = list(glob.glob(f"{data_config_filedir_path}*.json"))
     assert len(json_files) == 1
     data_config_file = json_files[0]
-    logging.info(f"Found config json file: {data_config_file}")
+    logging.info(f"Found data config json file: {data_config_file}")
     with open(data_config_file) as f:
         data_config = json.load(f)
     
     return data_config
 
-def init_config_w_data_config_file():
+def init_config_w_data_config_file(data_config_filedir_path):
     # Read the data config file and fold it into the global config
-    data_config = read_data_config()
+    data_config = read_data_config(data_config_filedir_path)
     
     config = init_config_w_data_config(data_config)
     
@@ -161,7 +162,7 @@ if __name__ == "__main__":
     #     raise FileNotFoundError(f"File not found: {data_loc}{data_config_filename}")
 
     # Read the data config file
-    config = init_config_w_data_config_file()
+    config = init_config_w_data_config_file(data_loc)
 
     # Enact any App Panel (command line argument) overrides.
     config['DATA_CONFIG'] = deep_dictionary_override(config['DATA_CONFIG'], json.loads(args.config_override))
