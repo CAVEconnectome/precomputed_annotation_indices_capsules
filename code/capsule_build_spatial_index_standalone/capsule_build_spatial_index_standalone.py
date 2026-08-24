@@ -513,9 +513,9 @@ if __name__ == "__main__":
         format=config['LOGGING_FORMAT'],
         force=True)
 
-    build_spatial_index(data_loc, results_loc, config, args.input_file)
+    # build_spatial_index(data_loc, results_loc, config, args.input_file)
 
-    finalize_results(results_loc)
+    # finalize_results(results_loc)
     process_running_time()
     dump_profile()
 
