@@ -6,3 +6,5 @@ google-cloud-storage
 caveclient
 cloud-files
 numpy
+pyarrow
+fastparquet
