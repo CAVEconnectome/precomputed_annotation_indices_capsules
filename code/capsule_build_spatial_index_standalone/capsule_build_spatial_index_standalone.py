@@ -414,6 +414,8 @@ def build_spatial_index(data_loc, results_loc, config, input_csv_path=None):
 def run(input_dir, output_dir, data_config, input_file):
     config = gc.init_config_w_data_config(data_config)
 
+    logging_uid = hex(int(random.random() * 1000000000000))[2:]
+
     logging.basicConfig(
         level=get_logging_level_from_desc(config['LOGGING_LEVEL']),
         handlers=[
@@ -451,75 +453,75 @@ def run(input_dir, output_dir, data_config, input_file):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import argparse
+    # import argparse
 
     data_loc = "../data/"
     results_loc = "../results/"
 
-    logging_uid = hex(int(random.random() * 1000000000000))[2:]
+    # logging_uid = hex(int(random.random() * 1000000000000))[2:]
 
-    os.makedirs(results_loc, exist_ok=True)
+    # os.makedirs(results_loc, exist_ok=True)
 
-    logging.basicConfig(
-        level=logging.CRITICAL,
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(
-                f"{results_loc}log_build_spatial_index_standalone_{logging_uid}.log",
-                mode="a"),
-        ],
-        format='%(message)s')
-    logging.critical("_" * 100)
-    logging.critical("BUILD SPATIAL INDEX STANDALONE")
+    # logging.basicConfig(
+    #     level=logging.CRITICAL,
+    #     handlers=[
+    #         logging.StreamHandler(sys.stdout),
+    #         logging.FileHandler(
+    #             f"{results_loc}log_build_spatial_index_standalone_{logging_uid}.log",
+    #             mode="a"),
+    #     ],
+    #     format='%(message)s')
+    # logging.critical("_" * 100)
+    # logging.critical("BUILD SPATIAL INDEX STANDALONE")
 
-    parser = argparse.ArgumentParser(
-        description="Standalone spatial index builder (single CSV -> precomputed shards)")
-    parser.add_argument(
-        '--input_file', dest='input_file', default=None,
-        help="Path to the input CSV file.  If not given, a file matching "
-             "*split-001@1*.csv must already be present in ../data/")
-    parser.add_argument('--capsule', dest='capsule', default=None)
-    parser.add_argument('--config_override', dest='config_override', default=None)
-    args, _ = parser.parse_known_args()
+    # parser = argparse.ArgumentParser(
+    #     description="Standalone spatial index builder (single CSV -> precomputed shards)")
+    # parser.add_argument(
+    #     '--input_file', dest='input_file', default=None,
+    #     help="Path to the input CSV file.  If not given, a file matching "
+    #          "*split-001@1*.csv must already be present in ../data/")
+    # parser.add_argument('--capsule', dest='capsule', default=None)
+    # parser.add_argument('--config_override', dest='config_override', default=None)
+    # args, _ = parser.parse_known_args()
 
-    # Read base config (without spatial) to supply inputs to generate_spatial_config.
-    config = gc.init_config_w_data_config_file(data_loc)
+    # # Read base config (without spatial) to supply inputs to generate_spatial_config.
+    # config = gc.init_config_w_data_config_file(data_loc)
 
-    # Apply any App Panel overrides now so pipeline_spatial_config overrides are
-    # available during sharding spec calculation.
-    if args.config_override:
-        config['DATA_CONFIG'] = _deep_dictionary_override(
-            config['DATA_CONFIG'], json.loads(args.config_override))
+    # # Apply any App Panel overrides now so pipeline_spatial_config overrides are
+    # # available during sharding spec calculation.
+    # if args.config_override:
+    #     config['DATA_CONFIG'] = _deep_dictionary_override(
+    #         config['DATA_CONFIG'], json.loads(args.config_override))
 
-    # Generate job_spatial_config.py in data_loc so read_config can pick it up below.
-    spatial_config = generate_spatial_config(data_loc, config)
+    # # Generate job_spatial_config.py in data_loc so read_config can pick it up below.
+    # spatial_config = generate_spatial_config(data_loc, config)
 
-    # Now read the full config, which includes the spatial config we just generated.
-    config = read_config(["id", "relation", "spatial"])
+    # # Now read the full config, which includes the spatial config we just generated.
+    # config = read_config(["id", "relation", "spatial"])
 
-    # Re-apply App Panel overrides to the full config.
-    if args.config_override:
-        config['DATA_CONFIG'] = _deep_dictionary_override(
-            config['DATA_CONFIG'], json.loads(args.config_override))
+    # # Re-apply App Panel overrides to the full config.
+    # if args.config_override:
+    #     config['DATA_CONFIG'] = _deep_dictionary_override(
+    #         config['DATA_CONFIG'], json.loads(args.config_override))
 
-    logging.basicConfig(
-        level=get_logging_level_from_desc(config['LOGGING_LEVEL']),
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(
-                f"{results_loc}log_build_spatial_index_standalone_{logging_uid}.log",
-                mode="a"),
-        ],
-        format=config['LOGGING_FORMAT'],
-        force=True)
+    # logging.basicConfig(
+    #     level=get_logging_level_from_desc(config['LOGGING_LEVEL']),
+    #     handlers=[
+    #         logging.StreamHandler(sys.stdout),
+    #         logging.FileHandler(
+    #             f"{results_loc}log_build_spatial_index_standalone_{logging_uid}.log",
+    #             mode="a"),
+    #     ],
+    #     format=config['LOGGING_FORMAT'],
+    #     force=True)
 
-    build_spatial_index(data_loc, results_loc, config, args.input_file)
+    # build_spatial_index(data_loc, results_loc, config, args.input_file)
 
-    finalize_results(results_loc)
-    process_running_time()
-    dump_profile()
+    # finalize_results(results_loc)
+    # process_running_time()
+    # dump_profile()
 
-    logging.info("\nDone")
+    # logging.info("\nDone")
 
 
 
