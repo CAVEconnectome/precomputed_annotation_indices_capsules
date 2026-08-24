@@ -11,6 +11,8 @@ dependencies = [
     "pandas>=2.2.0",
     "mmh3",
     "cloud-files",
+    "pyarrow",
+    "fastparquet",
 ]
 
 [tool.setuptools.packages.find]
