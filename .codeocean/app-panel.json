@@ -11,6 +11,15 @@
 			"value_type": "string"
 		},
 		{
+			"id": "q6PCIhmHkxB33SPs",
+			"name": "script",
+			"param_name": "script",
+			"description": "script",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "default"
+		},
+		{
 			"id": "vjT4s4B8Nz3zgKxk",
 			"name": "config_override",
 			"param_name": "config_override",

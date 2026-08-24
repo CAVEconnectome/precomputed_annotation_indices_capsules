@@ -4,7 +4,13 @@ set -ex
 # This is the master script for the capsule. When you click "Reproducible Run", the code in this file will execute.
 
 capsule="${1#--capsule=}"
+script="${2#--script=}"
 
-echo "Running capsule: '$capsule'"
+if [[ $script == "default" ]]; then
+    script=$capsule
+    echo "Running capsule's default script: '$script'"
+fi
 
-python -u -m ${capsule}.${capsule} "$@"
+echo "Running capsule.script: '$capsule.$script'"
+
+python -u -m ${capsule}.${script} "$@"

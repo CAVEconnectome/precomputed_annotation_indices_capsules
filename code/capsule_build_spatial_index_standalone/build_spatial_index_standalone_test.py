@@ -1,6 +1,8 @@
+import os
 import argparse
 
-import capsule_build_spatial_index_standalone as bsis
+import capsule_generate_config.capsule_generate_config as gc
+import capsule_build_spatial_index_standalone.capsule_build_spatial_index_standalone as bsis
 
 if __name__ == "__main__":
     data_loc = "../data/"
@@ -17,6 +19,6 @@ if __name__ == "__main__":
     parser.add_argument('--capsule', dest='capsule', default=None)
     parser.add_argument('--config_override', dest='config_override', default=None)
     args, _ = parser.parse_known_args()
-    
+
     data_config = gc.read_data_config(data_loc)
-    run(data_loc, results_loc, data_config, args.input_file)
+    bsis.run(data_loc, results_loc, data_config, args.input_file)
