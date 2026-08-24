@@ -74,5 +74,5 @@ if __name__ == "__main__":
     
     # generate_one_data_source_split_range(split_size, num_splits)
 
-logging.info("\nDone")
-process_running_time()
+    logging.info("\nDone")
+    process_running_time()

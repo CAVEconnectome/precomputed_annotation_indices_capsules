@@ -2393,5 +2393,5 @@ if __name__ == "__main__":
 
     dump_profile()
 
-logging.info("\nDone")
-process_running_time()
+    logging.info("\nDone")
+    process_running_time()

@@ -964,5 +964,5 @@ if __name__ == "__main__":
 
     analyze_memory_usage()
 
-logging.info("\nDone")
-process_running_time()
+    logging.info("\nDone")
+    process_running_time()

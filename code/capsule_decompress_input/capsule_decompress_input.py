@@ -346,5 +346,5 @@ if __name__ == "__main__":
 
     finalize_results(results_loc)
 
-logging.info("\nDone")
-process_running_time()
+    logging.info("\nDone")
+    process_running_time()

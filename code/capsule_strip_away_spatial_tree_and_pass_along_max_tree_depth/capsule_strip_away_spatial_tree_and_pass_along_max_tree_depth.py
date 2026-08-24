@@ -107,5 +107,5 @@ if __name__ == "__main__":
     for label, elap_t in accum_elapsed_times.items():
         logging.error(f"  {seconds_to_hms(elap_t)} {label}")
 
-logging.info("\nDone")
-process_running_time()
+    logging.info("\nDone")
+    process_running_time()

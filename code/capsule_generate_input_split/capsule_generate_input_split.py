@@ -342,5 +342,5 @@ if __name__ == "__main__":
     with open(f"{results_loc}job_config.py", 'w') as f:
         f.write(pprint.pformat(config) + '\n')
 
-logging.info("\nDone")
-process_running_time()
+    logging.info("\nDone")
+    process_running_time()

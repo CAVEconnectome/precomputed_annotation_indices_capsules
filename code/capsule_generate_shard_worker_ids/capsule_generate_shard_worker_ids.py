@@ -67,5 +67,5 @@ if __name__ == "__main__":
             # with open(f"{results_loc}shard_worker_{assigned_shards_desc}.txt", 'w') as f:
                 f.write(assigned_shards_desc)
 
-logging.info("\nDone")
-process_running_time()
+    logging.info("\nDone")
+    process_running_time()

@@ -99,5 +99,5 @@ if __name__ == "__main__":
         f.write(pprint.pformat(relation_config, indent=2) + '\n')
         # f.write(json.dumps(relation_config, indent=2))  # Can't be read by ast.literal(), only json.load()/loads()
 
-logging.info("\nDone")
-process_running_time()
+    logging.info("\nDone")
+    process_running_time()
