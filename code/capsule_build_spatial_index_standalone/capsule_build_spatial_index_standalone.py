@@ -116,7 +116,7 @@ def _run_tree_building(data_loc, results_loc, config, ram_data_pond):
     bsi.shard_worker_lookup = {}
 
     split_id = None
-    row_end = 1000  # config['LIMIT']
+    row_end = config['LIMIT']
     src_loc = data_loc
     treelevel_iter = -1
     tree_level_shard_histograms = []
