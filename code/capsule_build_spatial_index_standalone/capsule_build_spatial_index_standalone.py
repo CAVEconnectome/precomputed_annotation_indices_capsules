@@ -482,6 +482,8 @@ if __name__ == "__main__":
     parser.add_argument('--config_override', dest='config_override', default=None)
     args, _ = parser.parse_known_args()
 
+    logging.info(f"Args: {args}")
+
     # Read base config (without spatial) to supply inputs to generate_spatial_config.
     config = gc.init_config_w_data_config_file(data_loc)
 
