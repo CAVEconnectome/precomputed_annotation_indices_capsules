@@ -435,7 +435,17 @@ def run(input_dir, output_dir, data_config, input_file):
         force=True)
     
     logging.info("\nrun() (Build annotation spatial index)")
-    logging.info(f"\ndata_config: {data_config}\n")
+
+    # Enact any overrides
+    if 'pipeline_config' in config['DATA_CONFIG']:
+        for k, v in config['DATA_CONFIG']['pipeline_config'].items():
+            if k == 'docstring':
+                continue
+            logging.info(f"Overriding default pipeline config {k} = {config[k]} with {v}")
+            config[k] = v
+        # config = deep_dictionary_override(config, config['DATA_CONFIG']['pipeline_config'])
+    logging.info("")
+    
     logging.info(f"\nconfig: {config}\n")
     
     os.makedirs(output_dir, exist_ok=True)
