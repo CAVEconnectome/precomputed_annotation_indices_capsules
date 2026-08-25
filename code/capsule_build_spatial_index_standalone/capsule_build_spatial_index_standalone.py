@@ -83,7 +83,7 @@ def _prepare_input_file(input_csv_path, data_loc):
     if 'split-' in filename and '@' in filename:
         target = os.path.join(data_loc, filename)
     else:
-        target = os.path.join(data_loc, 'input_split-001@1.csv')
+        target = os.path.join(data_loc, 'input_split-001@1_rows-n.csv')
 
     if os.path.abspath(input_csv_path) != os.path.abspath(target):
         # logging.info(f"Copying input CSV to data_loc:\n  {input_csv_path}\n  -> {target}")
