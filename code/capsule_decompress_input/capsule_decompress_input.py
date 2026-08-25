@@ -183,7 +183,7 @@ def find_input_subpaths(input_dir):
     
     return file_ext, input_subpaths
 
-def find_volume_bounds(input_path):
+def find_volume_bounds(input_path, config):
     # Find the volume bounds of each XYZ axis of the total data (before it gets split)
 
     logging.info("\nFinding volume bounds")
@@ -298,6 +298,7 @@ def find_volume_bounds(input_path):
         [x_max, y_max, z_max],
     ]
     config['DATA_CONFIG']['volume_bounds'] = volume_bounds
+    return config
 
 if __name__ == "__main__":
     logging.basicConfig(stream=sys.stdout, level=logging.CRITICAL, format='%(message)s')
@@ -337,7 +338,7 @@ if __name__ == "__main__":
 
     file_ext, input_subpaths = find_input_subpaths(results_loc)
 
-    find_volume_bounds(input_subpaths[0])
+    config = find_volume_bounds(input_subpaths[0], config)
 
     # Since the volume bounds in the config might have been updated,
     # write the config to the results to propagate into the pipeline.

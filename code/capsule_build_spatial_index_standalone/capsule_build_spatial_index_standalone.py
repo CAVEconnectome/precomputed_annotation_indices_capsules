@@ -47,6 +47,7 @@ from shared.ram_data_pond import *
 # Their module-level globals (data_loc, results_loc, config, ram_data_pond, …) are patched
 # just before any of their functions are called.
 import capsule_generate_config.capsule_generate_config as gc
+import capsule_decompress_input.capsule_decompress_input as di
 import capsule_generate_spatial_index_config.capsule_generate_spatial_index_config as gsic
 import capsule_build_spatial_index.capsule_build_spatial_index as bsi
 import capsule_generate_spatial_index_shards.finalize_annotations as fa
@@ -397,6 +398,12 @@ def build_spatial_index(data_loc, results_loc, config, input_csv_path=None):
 
     if input_csv_path is not None:
         _prepare_input_file(input_csv_path, data_loc)
+        if not config['DATA_CONFIG']['volume_bounds']:
+            config = di.find_volume_bounds(input_csv_path, config)
+    else:
+        if not config['DATA_CONFIG']['volume_bounds']:
+            file_ext, input_subpaths = find_input_subpaths(data_loc)
+            config = find_volume_bounds(input_subpaths[0], config)
 
     ram_data_pond = RAMDataPond(True)
 
@@ -421,6 +428,13 @@ def build_spatial_index(data_loc, results_loc, config, input_csv_path=None):
 
 
 def run(input_dir, output_dir, data_config, input_file):
+    # For a standalone scenario, we want the num_subsplits fixed at 1.
+    # Higher values will have the effect of thinning the number of annotations stored in each oct tree cell.
+    # It would be better to control such behavior by directly overriding the MAX_DATA_ROWS_PER_TREE_CELL parameter via the data_config's optional pipeline_config parameters.
+    if "data_size" in data_config:
+        if data_config["data_size"][6] != 1:
+            data_config["data_size"][6] = 1
+    
     config = gc.init_config_w_data_config(data_config)
 
     logging.basicConfig(
