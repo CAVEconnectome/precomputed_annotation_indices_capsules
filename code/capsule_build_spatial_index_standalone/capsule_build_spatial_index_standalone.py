@@ -98,6 +98,8 @@ def _run_tree_building(data_loc, results_loc, config, ram_data_pond):
 
     Returns split_id (int) on success, or None if no data was found.
     """
+    logging.info("_run_tree_building()")
+    
     # Patch all module-level globals that bsi functions read.
     bsi.data_loc = data_loc
     bsi.results_loc = results_loc
@@ -383,6 +385,7 @@ def build_spatial_index(data_loc, results_loc, config, input_csv_path=None):
         If given, this CSV file is copied into data_loc with the required
         naming convention before processing begins.
     """
+    logging.info("build_spatial_index()")
     os.makedirs(data_loc, exist_ok=True)
     os.makedirs(results_loc, exist_ok=True)
 
@@ -425,7 +428,7 @@ def run(input_dir, output_dir, data_config, input_file):
         format=config['LOGGING_FORMAT'],
         force=True)
     
-    logging.info("\nBuild annotation spatial index")
+    logging.info("\nrun() (Build annotation spatial index)")
     
     os.makedirs(output_dir, exist_ok=True)
 

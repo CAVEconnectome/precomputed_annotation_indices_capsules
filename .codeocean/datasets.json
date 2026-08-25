@@ -2,6 +2,10 @@
 	"version": 1,
 	"attached_datasets": [
 		{
+			"id": "ae02b935-4192-4770-a18d-d899f8501557",
+			"mount": "SmartSPIM_840041_2026-04-23_12-01-42_stitched_2026-07-24_07-00-56"
+		},
+		{
 			"id": "bacb8982-892d-437b-b732-de1257e7a398",
 			"mount": "synapses_pni_2_v1_filtered_view__v1412__test1"
 		}
