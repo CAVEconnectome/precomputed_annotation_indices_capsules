@@ -421,6 +421,7 @@ def build_spatial_index(data_loc, results_loc, config, input_csv_path=None):
 
 
 def run(input_dir, output_dir, data_config, input_file):
+    logging.info(f"data_config: {data_config}")
     config = gc.init_config_w_data_config(data_config)
 
     logging.basicConfig(
