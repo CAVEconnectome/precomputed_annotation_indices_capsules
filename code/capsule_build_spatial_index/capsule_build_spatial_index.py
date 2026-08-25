@@ -1626,6 +1626,8 @@ def process_one_tree_level(subsplit_id, subsplit_range_row_start, subsplit_range
 
     logging.info(f"Process one tree level received result: {result}")
 
+    analyze_memory_usage()
+
     if result is None:
         # Subsplits are done
         end_timeblock("process_one_tree_level()")
@@ -2073,20 +2075,16 @@ def process_subsplit(subsplit_id, subsplit_range_row_start, subsplit_range_row_e
         tree_level_shard_histograms.append(Counter())
         start_timeblock("call process_one_tree_level()")
         result = process_one_tree_level(subsplit_id, subsplit_range_row_start, subsplit_range_row_end, treelevel_iter, src_loc, tree_level_shard_histograms)
-        logging.info(f"Result received from process_one_tree_level(): {result}")
         if result is None:
             # Subsplits are done
             end_timeblock("call process_one_tree_level()")
             end_end_timeblocks("tree_level_loop", "process_subsplit()")
-            logging.info("AAA")
             return None, False
         split_id, num_splits, src_loc, process_next_tree_level = result
         end_timeblock("call process_one_tree_level()")
         if split_id is None:
             end_timeblock("tree_level_loop")
-            logging.info("BBB")
             break
-        logging.info("MEMORY USAGE:")
         analyze_memory_usage()
         ram_data_pond_size = ram_data_pond.get_total_size()
         logging.info(f"RAM data pond size: {len(ram_data_pond.ram_data_pond)} items    {ram_data_pond_size} B    {ram_data_pond_size / 1000:,.1f} KB    {ram_data_pond_size / 1000000:,.1f} MB\n")
