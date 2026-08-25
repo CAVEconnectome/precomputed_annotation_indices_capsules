@@ -1160,5 +1160,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-logging.info("\nDone")
-process_running_time()
+    logging.info("\nDone")
+    process_running_time()
