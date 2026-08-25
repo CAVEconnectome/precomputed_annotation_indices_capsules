@@ -35,3 +35,5 @@ if __name__ == "__main__":
 ```
 
 If you are running this in a capsule in Code Ocean, then the `input_filepath` probably begins with `../data/`, just like the indicated `data_loc` variable.
+
+Please contact Keith Wiley (keith.wiley@alleninstitute.org) for assistance.
