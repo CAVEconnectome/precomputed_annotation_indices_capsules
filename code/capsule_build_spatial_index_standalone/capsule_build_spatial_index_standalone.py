@@ -78,6 +78,7 @@ def _prepare_input_file(input_csv_path, data_loc):
     """
     logging.info(f"_prepare_input_file() {input_csv_path} {data_loc}")
     filename = os.path.basename(input_csv_path)
+    assert(filename.endswith(".csv"))
     # Check whether the file already carries the required split tag.
     if 'split-' in filename and '@' in filename:
         target = os.path.join(data_loc, filename)
