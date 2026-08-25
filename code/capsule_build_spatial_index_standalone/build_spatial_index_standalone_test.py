@@ -20,5 +20,7 @@ if __name__ == "__main__":
     parser.add_argument('--config_override', dest='config_override', default=None)
     args, _ = parser.parse_known_args()
 
+    print(f"Args: {args}")
+
     data_config = gc.read_data_config(data_loc)
     bsis.run(data_loc, results_loc, data_config, args.input_file)
