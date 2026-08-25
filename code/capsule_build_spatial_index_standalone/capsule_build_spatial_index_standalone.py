@@ -75,6 +75,7 @@ def _prepare_input_file(input_csv_path, data_loc):
     'split-001@1' naming convention exists inside data_loc.  Returns the path
     that will be found by the glob inside the tree builder.
     """
+    logging.info(f"_prepare_input_file() {input_csv_path} {data_loc}")
     filename = os.path.basename(input_csv_path)
     # Check whether the file already carries the required split tag.
     if 'split-' in filename and '@' in filename:
@@ -99,7 +100,7 @@ def _run_tree_building(data_loc, results_loc, config, ram_data_pond):
     Returns split_id (int) on success, or None if no data was found.
     """
     logging.info("_run_tree_building()")
-    
+
     # Patch all module-level globals that bsi functions read.
     bsi.data_loc = data_loc
     bsi.results_loc = results_loc
