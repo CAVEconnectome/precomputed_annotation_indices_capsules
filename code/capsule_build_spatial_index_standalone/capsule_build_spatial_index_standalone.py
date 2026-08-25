@@ -26,6 +26,7 @@ All intermediate data lives in RAM (via RAMDataPond).
 import sys
 import logging
 import os
+from pathlib import Path
 import pprint
 import random
 import shutil
@@ -71,7 +72,7 @@ def _deep_dictionary_override(default: dict, override: dict, parent_keys=[]) -> 
 
 def _prepare_input_file(input_csv_path, data_loc):
     """
-    If the caller supplied an explicit CSV path, ensure a copy with the required
+    If the caller supplied an explicit CSV path, ensure a copy (or symlink) with the required
     'split-001@1' naming convention exists inside data_loc.  Returns the path
     that will be found by the glob inside the tree builder.
     """
@@ -84,8 +85,10 @@ def _prepare_input_file(input_csv_path, data_loc):
         target = os.path.join(data_loc, 'input_split-001@1.csv')
 
     if os.path.abspath(input_csv_path) != os.path.abspath(target):
-        logging.info(f"Copying input CSV to data_loc:\n  {input_csv_path}\n  -> {target}")
-        shutil.copy(input_csv_path, target)
+        # logging.info(f"Copying input CSV to data_loc:\n  {input_csv_path}\n  -> {target}")
+        # shutil.copy(input_csv_path, target)
+        logging.info(f"Symlinking input CSV to data_loc:\n  {input_csv_path}\n  -> {target}")
+        Path(target).symlink_to(Path(input_csv_path))
     return target
 
 
