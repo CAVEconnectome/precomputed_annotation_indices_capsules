@@ -83,7 +83,7 @@ def _prepare_input_file(input_csv_path, data_loc):
     if 'split-' in filename and '@' in filename:
         target = os.path.join(data_loc, filename)
     else:
-        target = os.path.join(data_loc, 'input_split-001@1_rows-0-1000.csv')
+        target = os.path.join(data_loc, 'input_split-001@1_rows-n.csv')
 
     if os.path.abspath(input_csv_path) != os.path.abspath(target):
         # logging.info(f"Copying input CSV to data_loc:\n  {input_csv_path}\n  -> {target}")
@@ -116,6 +116,7 @@ def _run_tree_building(data_loc, results_loc, config, ram_data_pond):
     bsi.shard_worker_lookup = {}
 
     split_id = None
+    row_end = config['LIMIT']
     src_loc = data_loc
     treelevel_iter = -1
     tree_level_shard_histograms = []
@@ -128,7 +129,7 @@ def _run_tree_building(data_loc, results_loc, config, ram_data_pond):
 
         # subsplit_id=1, row_start=0, row_end=None → process the entire file
         result = bsi.process_one_tree_level(
-            1, 0, None, treelevel_iter, src_loc, tree_level_shard_histograms)
+            1, 0, row_end, treelevel_iter, src_loc, tree_level_shard_histograms)
 
         if result is None:
             logging.info("process_one_tree_level returned None — no data or subsplits exhausted.")
@@ -446,6 +447,8 @@ def run(input_dir, output_dir, data_config, input_file):
     # Note that this replicats that code, but it is a mere key/value copy-over, as proceeds below:
     for k, v in spatial_config.items():
         config[k] = v
+    
+    logging.info(f"Config: {config}")
 
     build_spatial_index(input_dir, output_dir, config, input_file)
 
