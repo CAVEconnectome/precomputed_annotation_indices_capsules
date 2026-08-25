@@ -138,6 +138,7 @@ def determine_capsule_tree_level(src_loc):
         config['DATA_CONFIG']['structure'] == "one_annotation_per_row__multiple_points_per_row_in_one_field":
         # raw_input_files = glob.glob(f"{src_loc}*split-*_rows-*.csv")
         raw_input_files = ram_data_pond.glob_disk_or_ram_data_pond(f"{src_loc}*split-*.csv", src_loc==data_loc)
+        logging.info(f"AAA raw_input_files: {src_loc}*split-*.csv: {raw_input_files}")
         if len(raw_input_files) == 0:
             raw_input_files = ram_data_pond.glob_disk_or_ram_data_pond(f"{src_loc}*split-*.parquet", src_loc==data_loc)
         if len(raw_input_files) == 0:
