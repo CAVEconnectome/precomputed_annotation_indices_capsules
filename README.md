@@ -19,7 +19,20 @@ https://github.com/CAVEconnectome/precomputed_annotation_indices_pipeline
 
 You don't need to clone that repo. Just study the top-level README. Of that README, you only need to focus on the section near the top that describes building a data config file. You can ignore the rest of the documentation on that page. Note that that repo also includes a data config example and a data config template that you can use to build your own data config file for your own data.
 
-A basic Python script to build a spatial index then looks somelike like the following:
+After building an initial data config file as described above, you must make some small additions or alterations to it. The documentation above shows how to construct a data config file for a Code Ocean or Nextflow run. For a standalone run, you need to add `data_size` to the json. I like to put it between `data_version` and `data_sizes` (notice the extra 's'; don't confuse them). This `data_path` key/value indicates a list with the following items (in the following order, of course):
+- [string] A *label* that for your purposes is unimportant and unused.
+- [int] *Data size in bytes*.
+- [int] *Data size in rows or annotations*.
+- [int] *Split size*: This will almost certainly be ignored under normal usage (if your data config json includes a non-null `id_column` parameter, then this split size parameter will be ignored). Most scenarios will involve indicating an id column in the config, and therefore this split size parameter will usually be ignored. It relates to the number of splits into which to divide a huge data file, but for standalone usage, the subsplits parameter below serves that purpose instead.
+- [int] Ignored - This parameter indicates the number of distributed data splits, which in a standalone scenario is obviously fixed at 1; this parameter isn't even accessed by the standalone process.
+- [int] *Subsplit size in rows*. This parameter provides a memory-management technique whereby only this many rows are ingested and processed at a time. For small machines I usually set this to 2,000,000.
+- [int] Ignored - This parameter indicates the number of subsplits to divide the input file into. It only applies in distributed scenarios, not standalone usage.
+
+Note that you need to know your data size in both bytes and rows or annotation-count in order to build a spatial index. These values are crucial to the sharding calculations.
+
+Another parameter that can be helpful to provide is the `volume_bounds` of your data. Notice that parameter documented for the data_config. It can be optionally assigned a null or empyt value, but if left out, it will significantly increase the processing time of the overall pipeline. Note that the first time it is calculated, the volume bounds will be written to the logging output. You can copy it from there and paste it into your data config after that initial run so that subsequent runs don't have to calculate it again.
+
+A basic Python script to build a spatial index then looks something like the following:
 ```
 import capsule_generate_config.capsule_generate_config as gc
 import capsule_build_spatial_index_standalone.capsule_build_spatial_index_standalone as bsis
