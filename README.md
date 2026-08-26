@@ -19,7 +19,7 @@ https://github.com/CAVEconnectome/precomputed_annotation_indices_pipeline
 
 You don't need to clone that repo. Just study the top-level README. Of that README, you only need to focus on the section near the top that describes building a data config file. You can ignore the rest of the documentation on that page. Note that that repo also includes a data config example and a data config template that you can use to build your own data config file for your own data.
 
-After building an initial data config file as described above, you must make some small additions or alterations to it. The documentation above shows how to construct a data config file for a Code Ocean or Nextflow run. For a standalone run, you need to add `data_size` to the json. I like to put it between `data_version` and `data_sizes` (notice the extra 's'; don't confuse them). This `data_path` key/value indicates a list with the following items (in the following order, of course):
+After building an initial data config file as described above, you must make some small additions or alterations to it. The documentation above shows how to construct a data config file for a Code Ocean or Nextflow run. For a standalone run, you need to add `data_size` to the json. I like to put it between `data_version` and `data_sizes` (notice the extra 's'; don't confuse them). This `data_size` key/value indicates a list with the following items (in the following order, of course):
 - [string] A *label* that for your purposes is unimportant and unused.
 - [int] *Data size in bytes*.
 - [int] *Data size in rows or annotations*.
