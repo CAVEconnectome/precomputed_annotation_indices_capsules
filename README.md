@@ -28,7 +28,7 @@ After building an initial data config file as described above, you must make som
 - [int] *Subsplit size in rows*. This parameter provides a memory-management technique whereby only this many rows are ingested and processed at a time. For small machines I usually set this to 2,000,000.
 - [int] Ignored - This parameter indicates the number of subsplits to divide the input file into. It only applies in distributed scenarios, not standalone usage.
 
-Note that you need to know your data size in both bytes and rows or annotation-count in order to build a spatial index. These values are crucial to the sharding calculations.
+Note that you need to know your data size in both bytes and rows (or annotation-count) in order to build a spatial index. These values are crucial to the sharding calculations.
 
 Another parameter that can be helpful to provide is the `volume_bounds` of your data. Notice that parameter documented for the data config json above. It can be optionally assigned a null or empty list value, but omitting it will significantly increase the processing time of the overall pipeline. Note that when it is calculated, the volume bounds is written to the logging output. So, one option is to copy it from the output and paste it into your data config after your initial run so that subsequent runs don't have to calculate it again. You might not need to generate an index or the same input data, but in the event of any other issues that force a subsequent attempt, copying and pasting the volume bounds from the initial run into the data config will expedite those later runs.
 
