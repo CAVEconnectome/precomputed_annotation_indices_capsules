@@ -34,8 +34,7 @@ Another parameter that can be helpful to provide is the `volume_bounds` of your 
 
 A basic Python script to build a spatial index then looks something like the following:
 ```
-import capsule_generate_config.capsule_generate_config as gc
-import capsule_build_spatial_index_standalone.capsule_build_spatial_index_standalone as bsis
+from precomputed_annotation_indices import *
 
 if __name__ == "__main__":
     data_loc = "../data/"
