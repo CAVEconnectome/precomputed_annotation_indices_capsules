@@ -4,7 +4,7 @@ This repo implements a set of Code Ocean capsules, one per subdirectory under `c
 
 For documentation regarding this code's use ***within*** Code Ocean or Nextflow, please refer here: https://github.com/CAVEconnectome/precomputed_annotation_indices_pipeline
 
-The following describes how to build an annotation spatial index in a standalone fashion, with no reliance on Code Ocean or Nextflow. The relevant module is simply imported as a straightforward Python module and builds a spatial index from an input CSV or Parquet file on local disk without reliance on a distributed cluster (Code Ocean) or even on a local pipelining framework (Nextflow).
+The following describes how to build an annotation spatial index ***in a standalone fashion***, with no reliance on Code Ocean or Nextflow. The relevant module is simply imported as a straightforward Python module and builds a spatial index from an input CSV or Parquet file on local disk without reliance on a distributed cluster (Code Ocean) or even on a local pipelining framework (Nextflow).
 
 The basic steps are:
 - Clone this spatial indexing git repo (this same repo is used by Code Ocean or by Nextflow, but it has a standalone usage pathway too).
