@@ -191,7 +191,7 @@ def find_volume_bounds(input_path, config):
     volume_bounds = config['DATA_CONFIG']['volume_bounds']
     if volume_bounds:
         logging.info(f"\nVolume bounds is provided by the data config. There is no need to calculate it:\n{volume_bounds}")
-        return
+        return config
     
     logging.info("\nVolume bounds not provided by data config. Proceeding to calculate it...\n")
 
