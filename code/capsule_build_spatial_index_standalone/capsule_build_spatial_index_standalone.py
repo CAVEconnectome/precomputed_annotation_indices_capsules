@@ -106,6 +106,8 @@ def _run_tree_building(data_loc, results_loc, config, ram_data_pond):
     """
     logging.info("_run_tree_building()")
 
+    analyze_memory_usage()
+
     # Patch all module-level globals that bsi functions read.
     bsi.data_loc = data_loc
     bsi.results_loc = results_loc
@@ -463,6 +465,8 @@ def run(input_dir, output_dir, data_config, input_file):
     logging.info(f"\nconfig: {config}\n")
     
     os.makedirs(output_dir, exist_ok=True)
+
+    analyze_memory_usage()
 
     # Generate job_spatial_config.py in input_dir so read_config can pick it up below.
     spatial_config = generate_spatial_config(input_dir, config)
