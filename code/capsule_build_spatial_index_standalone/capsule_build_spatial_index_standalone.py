@@ -414,19 +414,29 @@ def build_spatial_index(data_loc, results_loc, config, input_csv_path=None):
     if split_id is None:
         logging.warning("Tree building produced no output — is the input file empty or misconfigured?")
         return
+    logging.info("Tree building done")
+
+    analyze_memory_usage()
 
     # Phase 2: extract and group completed tree cell data from the RAM data pond.
     treelevel_shard_csv = _extract_treecell_csv_with_index(results_loc, ram_data_pond)
+    logging.info("Tree cell data extraction done")
 
+    analyze_memory_usage()
+    
     if not treelevel_shard_csv:
         logging.warning("No completed tree cell data found after tree building.")
         return
 
     # Phase 3: write precomputed .shard files.
     _write_precomputed_shards(treelevel_shard_csv, data_loc, results_loc, config)
+    logging.info("Writing precomputed shards done")
+
+    analyze_memory_usage()
 
     # Phase 4: write the Neuroglancer info file and pipeline_config.json.
     _write_finalization_files(treelevel_shard_csv, data_loc, results_loc, config)
+    logging.info("Writing finalization files done")
 
 
 def run(input_dir, output_dir, data_config, input_file):
