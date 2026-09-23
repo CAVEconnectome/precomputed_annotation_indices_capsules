@@ -17,7 +17,7 @@ This is the pipeline third parties (aka anyone who isn't Keith Wiley) is intende
 A new version of the pipeline that uses numerous instances of a single capsule: 5443678.
 This pipeline can also be used by cloning the associated git repo locally and using Nextflow without Code Ocean.
 While I (Keith Wiley) know how to run this pipeline in Code Ocean, I would only expect third parties to ever use it in its non-Code Ocean, locally cloned, Nextflow fashion.
-5. **2302306 (CAPSULE) &mdash; Build annotation spatial index standalone**
+5. **2302306 (CAPSULE) &mdash; Build annotation spatial index standalone**<br>
 This is a capsule, not a pipeline, that generates a spatial index as a standalone Python module. The ID and relation indices are not included. It was built for Camilo Laiton and can be used either as a capsule within a larger pipeline or in a local environment that has nothing to do with Code Ocean, or even Nextflow.
 
 # precomputed_annotation_indices_capsules
