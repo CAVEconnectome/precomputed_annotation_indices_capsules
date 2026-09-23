@@ -12,7 +12,7 @@ A cleaned up copy of 9094939 used as a template for generating publicly released
 This pipeline should never be run, except to test its included tutorial.
 3. **8499214 &mdash; Build precomputed annotation indices**<br>
 A publicly released pipeline generated from 5421266.
-This is the pipeline third parties (aka anyone who isn't Keith Wiley) is intended to use on their own if operating within Code Ocean.
+This is the pipeline that third parties (aka anyone who isn't Keith Wiley) are intended to use on their own if operating within Code Ocean.
 4. **8751169 &mdash; Build precomputed annotation indices - via git**<br>
 A new version of the pipeline that uses numerous instances of a single capsule: 5443678.
 This pipeline can also be used by cloning the associated git repo locally and using Nextflow without Code Ocean.
