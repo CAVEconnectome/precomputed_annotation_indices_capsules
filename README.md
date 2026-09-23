@@ -1,3 +1,25 @@
+# Multiple pipeline options
+
+This section is included in the README of every pipeline and capsule listed below.
+
+There are multiple pipelines (and associated capsules) that perform the same basic task of building three indices (ID, relation, and spatial), either in a distributed fashion, or in one case, in a solitary standalone fashion:
+
+1. **9094939 &mdash; Build precomputed annotation indices - NOT via git - somewhat redundant with release-generating pipeline 5421266 but this is my development pipeline**<br>
+The original development pipeline. I (Keith Wiley) also use it for my own production runs.<br>
+Utilizes numerous capsules whose names all begin with *"Build precomputed annotation indices - ..."*
+2. **5421266 &mdash; Build precomputed annotation indices**<br>
+A cleaned up copy of 9094939 used as a template for generating publicly released pipeline 8499214.
+This pipeline should never be run, except to test its included tutorial.
+3. **8499214 &mdash; Build precomputed annotation indices**<br>
+A publicly released pipeline generated from 5421266.
+This is the pipeline third parties (aka anyone who isn't Keith Wiley) is intended to use on their own if operating within Code Ocean.
+4. **8751169 &mdash; Build precomputed annotation indices - via git**<br>
+A new version of the pipeline that uses numerous instances of a single capsule: 5443678.
+This pipeline can also be used by cloning the associated git repo locally and using Nextflow without Code Ocean.
+While I (Keith Wiley) know how to run this pipeline in Code Ocean, I would only expect third parties to ever use it in its non-Code Ocean, locally cloned, Nextflow fashion.
+5. **2302306 (CAPSULE) &mdash; Build annotation spatial index standalone**
+This is a capsule, not a pipeline, that generates a spatial index as a standalone Python module. The ID and relation indices are not included. It was built for Camilo Laiton and can be used either as a capsule within a larger pipeline or in a local environment that has nothing to do with Code Ocean, or even Nextflow.
+
 # precomputed_annotation_indices_capsules
 
 This repo implements a set of Code Ocean capsules, one per subdirectory under `code/` that represent the pieces of a Code Ocean or Nextflow pipeline for generating sharding precomputed ID, relation, and spatial indices of annotations for use by Neuroglancer or other analysis and visualization tools.
